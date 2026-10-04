@@ -216,6 +216,7 @@ private function getFilesize($size)
 					'title'	=>	'订单列表'
 				]
 					'jump'	=>	'/serverstate',
+				[
 					'title'	=>	'服务器管理'
 				]
 			];
