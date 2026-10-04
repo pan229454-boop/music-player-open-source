@@ -21,7 +21,8 @@ class Advanced extends BaseController
             return redirect('/');
         }
         
-        return View::fetch();
+        // 指定视图路径
+        return View::fetch('admin/advanced/index');
     }
     
     /**
