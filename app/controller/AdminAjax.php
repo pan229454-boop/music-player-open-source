@@ -218,6 +218,7 @@ private function getFilesize($size)
 				[
 					'jump'	=>	'/serverstate',
 					'title'	=>	'服务器管理'
+				],[\t				'jump'	=>	'/advanced',\t				'title'	=>	'<i class="layui-icon layui-icon-set"></i> 高级设置'
 				],
 
 			];
