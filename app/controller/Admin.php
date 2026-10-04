@@ -1,13 +1,13 @@
 <?php
 namespace app\controller;
 
-use app\base\Controller;
+use app\BaseController;
 use app\model\Users;
 use think\facade\View;
 use think\facade\Request;
 use think\facade\Db;
 
-class Admin extends Controller
+class Admin extends BaseController
 {
     /**
      * 高级设置页面
