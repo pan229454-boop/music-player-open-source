@@ -2,6 +2,7 @@
   <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件服务</div>
   <div class="layui-card-body">
     <blockquote class="layui-elem-quote">配置用于注册及找回密码的验证码邮件。请使用邮箱的 SMTP 授权码，而非登录密码。建议通过 HTTPS 打开后台再填写授权码。</blockquote>
+    <div class="layui-tab"><ul class="layui-tab-title"><li class="layui-this">SMTP配置</li><li>邮件模板与测试</li></ul><div class="layui-tab-content"><div class="layui-tab-item layui-show">
     <form class="layui-form" lay-filter="advanced-mail-form" autocomplete="off">
       <input type="hidden" name="csrf" value="{$mailSettingsCsrf}">
 <div class="layui-form-item"><label class="layui-form-label">SMTP服务器</label><div class="layui-input-block"><input class="layui-input" type="text" name="host" value="smtp.qq.com" placeholder="如 smtp.qq.com，不要加 https://" autocomplete="new-password" lay-verify="required"></div></div>
@@ -13,19 +14,50 @@
 <div class="layui-form-item"><label class="layui-form-label">加密方式</label><div class="layui-input-block"><select name="security"><option value="ssl">SSL（通常465）</option><option value="tls">STARTTLS（通常587）</option></select></div></div>
 <div class="layui-form-item"><div class="layui-input-block"><p id="advanced-mail-status">正在读取配置…</p><button type="button" class="layui-btn" lay-submit lay-filter="advanced-mail-save" id="advanced-mail-save" disabled>保存邮件配置</button></div></div>
     </form>
+</div><div class="layui-tab-item">
+<form class="layui-form" lay-filter="mail-template-form">
+<input type="hidden" name="csrf" value="{$mailSettingsCsrf}">
+<input type="hidden" name="action" value="template">
+<div class="layui-form-item"><label class="layui-form-label">邮件标题</label><div class="layui-input-block"><input class="layui-input" name="template_title" value="邮箱验证码" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">邮件正文</label><div class="layui-input-block"><textarea class="layui-textarea" name="template_body" rows="5" lay-verify="required">{literal}尊敬的用户，您正在进行邮箱验证，本次请求的验证码为：{code}{/literal}</textarea><p>{literal}正文必须包含 {code}，发送时替换为验证码。内容按纯文本安全转义，保留原有绿色标题和白色卡片样式。{/literal}</p></div></div>
+<div class="layui-form-item"><label class="layui-form-label">主页链接</label><div class="layui-input-block"><input class="layui-input" name="homepage" value="https://music.ovoeo.cn" lay-verify="required"></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn mail-template-button" disabled lay-submit lay-filter="mail-template-save">保存模板</button></div></div>
+</form>
+<form class="layui-form" lay-filter="mail-test-form">
+<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="test">
+<div class="layui-form-item"><label class="layui-form-label">测试收件箱</label><div class="layui-input-block"><input class="layui-input" type="email" name="test_email" placeholder="用于接收测试邮件，不改变发件邮箱" lay-verify="required|email"></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn layui-btn-normal mail-template-button" disabled lay-submit lay-filter="mail-test-send">发送测试邮件</button><p>使用已保存的 SMTP 和模板；修改后请先保存。测试验证码为123456，不可用于注册或找回密码。</p></div></div>
+</form></div></div></div>
+
   </div></div></div>
 {literal}
 <script>
-layui.use(['form', 'jquery', 'layer'], function() {
+layui.use(['form', 'jquery', 'layer', 'element'], function() {
     var form = layui.form, $ = layui.jquery, layer = layui.layer;
     $.getJSON('/Admin/mailSettingsData').done(function(res) {
         if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
         var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
         allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
         form.val('advanced-mail-form', fields);
+        var templateFields = {};
+        ['template_title','template_body','homepage'].forEach(function(key) { if (res.data && res.data[key] != null) templateFields[key] = res.data[key]; });
+        form.val('mail-template-form', templateFields);
+        $('.mail-template-button').prop('disabled', false);
         $('#advanced-mail-status').text(res.has_password ? '授权码已保存，不会回显；留空保留原值。' : '尚未保存邮件配置，请填写授权码。');
         $('#advanced-mail-save').prop('disabled', false);
     }).fail(function() { layer.msg('读取邮件配置失败，请刷新重试'); });
+    function mailAction(data) {
+        var button = $(data.elem);
+        if (button.prop('disabled')) return false;
+        button.prop('disabled', true);
+        $.ajax({url: '/Admin/advanced', type: 'POST', data: data.field, dataType: 'json', timeout: 60000})
+          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); })
+          .fail(function() { layer.msg('请求失败或超时，请检查登录状态及服务器；不要立即重复发送'); })
+          .always(function() { button.prop('disabled', false); });
+        return false;
+    }
+    form.on('submit(mail-template-save)', mailAction);
+    form.on('submit(mail-test-send)', mailAction);
     form.on('submit(advanced-mail-save)', function(data) {
         var button = $('#advanced-mail-save');
         if (button.prop('disabled')) return false;

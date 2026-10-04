@@ -18,6 +18,15 @@ class SendEmail
      * @param $emailAddress 邮件地址
      * @return bool|string 返回是否发送成功
      */
+    public static function SendCode($code, $emailAddress)
+    {
+        try { $settings = MailSettings::read(); }
+        catch (\Throwable $e) { return false; }
+        $title = str_replace('{code}', (string)$code, $settings['template_title'] ?? '邮箱验证码');
+        $body = str_replace('{code}', (string)$code, $settings['template_body'] ?? '尊敬的用户，您正在进行邮箱验证，本次请求的验证码为：{code}');
+        return self::SendEmail($title, $body, $emailAddress);
+    }
+
     public static function SendEmail($title = '测试邮件', $message = '你好,本邮件由笒鬼鬼音乐播放器发出', $emailAddress = 'cenguigui@qq.com')
     {
         try {
@@ -28,6 +37,7 @@ class SendEmail
         $mail = new PHPMailer();
         // 3. 设置属性，告诉我们的服务器，谁跟谁发送邮件
         $mail->IsSMTP();            // 告诉服务器使用smtp协议发送
+        $mail->Timeout = 15;
         $mail->SMTPAuth = true;        // 开启SMTP授权
         $mail->SMTPSecure = $settings['security'] ?? 'ssl';    // ssl加密 
         $mail->Port = $settings['port'] ?? 465;            // 使用465端口
@@ -99,8 +109,8 @@ class SendEmail
                         <p>' . nl2br(htmlspecialchars($message)) . '</p>
                     </div>
                     <div class="email-footer">
-                        <p>此邮件由' . self::$From . '自动发送。</p>
-                        <p><a href="' . self::$demo . '">访问我们的主页</a></p>
+                        <p>此邮件由' . htmlspecialchars($mail->From, ENT_QUOTES, 'UTF-8') . '自动发送。</p>
+                        <p><a href="' . htmlspecialchars($settings['homepage'] ?? self::$demo, ENT_QUOTES, 'UTF-8') . '">访问我们的主页</a></p>
                     </div>
                 </div>
             </body>

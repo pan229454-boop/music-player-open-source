@@ -78,6 +78,38 @@ class Admin extends Common
                 return json(['code' => -1, 'msg' => '页面已失效，请刷新后重试']);
             }
             try {
+                $action = $data['action'] ?? 'smtp';
+                if (!is_string($action)) throw new \InvalidArgumentException('请求格式不正确');
+                if ($action === 'template') {
+                    foreach (['template_title', 'template_body', 'homepage'] as $key) {
+                        if (!isset($data[$key]) || !is_string($data[$key])) throw new \InvalidArgumentException('模板格式不正确');
+                    }
+                    $title = trim($data['template_title']);
+                    $body = trim($data['template_body']);
+                    $homepage = trim($data['homepage']);
+                    if ($title === '' || strlen($title) > 200 || preg_match('/[\r\n\x00]/', $title)) throw new \InvalidArgumentException('标题不能为空且不能含换行，最大200字节');
+                    if ($body === '' || strlen($body) > 10000 || strpos($body, '{code}') === false || strpos($body, "\0") !== false) throw new \InvalidArgumentException('正文必须包含 {code}，最大10000字节');
+                    if (strlen($homepage) > 2048 || !filter_var($homepage, FILTER_VALIDATE_URL) || !in_array(strtolower((string)parse_url($homepage, PHP_URL_SCHEME)), ['http', 'https'], true)) throw new \InvalidArgumentException('主页链接必须是有效的 HTTP 或 HTTPS 网址');
+                    $settings = \PHPMailer\MailSettings::read();
+                    $settings['template_title'] = $title;
+                    $settings['template_body'] = $body;
+                    $settings['homepage'] = $homepage;
+                    \PHPMailer\MailSettings::save($settings);
+                    return json(['code' => 0, 'msg' => '邮件模板已保存']);
+                }
+                if ($action === 'test') {
+                    $email = $data['test_email'] ?? '';
+                    if (!is_string($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \InvalidArgumentException('请输入有效的测试收件邮箱');
+                    $settings = \PHPMailer\MailSettings::read();
+                    if (empty($settings['password']) || empty($settings['host']) || empty($settings['from'])) throw new \InvalidArgumentException('请先保存 SMTP 配置');
+                    $last = (int)\think\facade\Session::get('mail_test_last', 0);
+                    if (time() - $last < 30) throw new \InvalidArgumentException('测试发送间隔至少30秒');
+                    \think\facade\Session::set('mail_test_last', time());
+                    try { $result = \PHPMailer\SendEmail::SendCode('123456', $email); }
+                    catch (\Throwable $e) { $result = false; }
+                    return json(['code' => $result === true ? 0 : -1, 'msg' => $result === true ? 'SMTP已接受测试邮件，请检查收件箱和垃圾邮件（示例验证码123456）' : '测试发送失败，请检查 SMTP 配置、授权码及服务器网络']);
+                }
+                if ($action !== 'smtp') throw new \InvalidArgumentException('未知操作');
                 foreach (['host', 'from', 'username', 'from_name', 'password', 'port', 'security'] as $key) {
                     if (isset($data[$key]) && !is_scalar($data[$key])) throw new \InvalidArgumentException('配置格式不正确');
                 }
@@ -102,7 +134,7 @@ class Admin extends Common
                     $password = $old['password'] ?? '';
                 }
                 if ($password === '' || strlen($password) > 512 || preg_match('/[\r\n\x00]/', $password)) throw new \InvalidArgumentException('首次配置请填写有效的邮箱授权码');
-                \PHPMailer\MailSettings::save(['host' => $host, 'from' => $from, 'username' => $username, 'from_name' => $name, 'port' => $port, 'security' => $security, 'password' => $password]);
+                \PHPMailer\MailSettings::save(array_merge($old, ['host' => $host, 'from' => $from, 'username' => $username, 'from_name' => $name, 'port' => $port, 'security' => $security, 'password' => $password]));
                 return json(['code' => 0, 'msg' => '邮件配置已保存，后续发送将使用新配置（尚未验证 SMTP 连通性）']);
             } catch (\Throwable $e) {
                 return json(['code' => -1, 'msg' => $e->getMessage()]);

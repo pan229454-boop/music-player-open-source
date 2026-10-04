@@ -224,9 +224,9 @@ function jsonp_decode($jsonp, $assoc = false)
             $email = input('get.email');
             $code = rand(100000, 999999);
             $msg = '尊敬的用户，您正在进行邮箱验证，本次请求的验证码为：' . $code;
-            $result = SendEmail::SendEmail('邮箱验证码', $msg, $email);
-            Cookie::set('regcode', md5($code), 600);
-            if ($result) {
+            $result = SendEmail::SendCode($code, $email);
+            if ($result === true) {
+                Cookie::set('regcode', md5($code), 600);
                 $result = [
                     'code' => 0,
                     'msg' => '已发送验证码到邮箱' . $email
