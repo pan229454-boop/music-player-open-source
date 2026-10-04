@@ -1,14 +1,44 @@
-<div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-        <div class="layui-col-md12">
-            <div class="layui-card">
-                <div class="layui-card-header">
-                    <i class="layui-icon layui-icon-set"></i> 高级设置
-                </div>
-                <div class="layui-card-body">
-                    <blockquote class="layui-elem-quote">功能开发中...</blockquote>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="layui-fluid"><div class="layui-card">
+  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件服务</div>
+  <div class="layui-card-body">
+    <blockquote class="layui-elem-quote">配置用于注册及找回密码的验证码邮件。请使用邮箱的 SMTP 授权码，而非登录密码。建议通过 HTTPS 打开后台再填写授权码。</blockquote>
+    <form class="layui-form" lay-filter="advanced-mail-form" autocomplete="off">
+      <input type="hidden" name="csrf" value="{$mailSettingsCsrf}">
+<div class="layui-form-item"><label class="layui-form-label">SMTP服务器</label><div class="layui-input-block"><input class="layui-input" type="text" name="host" value="smtp.qq.com" placeholder="如 smtp.qq.com，不要加 https://" autocomplete="new-password" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">发件邮箱</label><div class="layui-input-block"><input class="layui-input" type="email" name="from" value="" placeholder="发件人邮箱地址" autocomplete="new-password" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">SMTP账号</label><div class="layui-input-block"><input class="layui-input" type="text" name="username" value="" placeholder="一般与发件邮箱相同" autocomplete="new-password" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">发件人名称</label><div class="layui-input-block"><input class="layui-input" type="text" name="from_name" value="音乐播放器" placeholder="收件人看到的名称" autocomplete="new-password" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">SMTP端口</label><div class="layui-input-block"><input class="layui-input" type="number" name="port" value="465" placeholder="SSL常用465，STARTTLS常用587" autocomplete="new-password" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">邮箱授权码</label><div class="layui-input-block"><input class="layui-input" type="password" name="password" value="" placeholder="首次必填；留空保留已保存的授权码" autocomplete="new-password"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">加密方式</label><div class="layui-input-block"><select name="security"><option value="ssl">SSL（通常465）</option><option value="tls">STARTTLS（通常587）</option></select></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><p id="advanced-mail-status">正在读取配置…</p><button type="button" class="layui-btn" lay-submit lay-filter="advanced-mail-save" id="advanced-mail-save" disabled>保存邮件配置</button></div></div>
+    </form>
+  </div></div></div>
+<script>
+layui.use(['form', 'jquery', 'layer'], function() {
+    var form = layui.form, $ = layui.jquery, layer = layui.layer;
+    $.getJSON('/Admin/mailSettingsData').done(function(res) {
+        if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
+        var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
+        allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
+        form.val('advanced-mail-form', fields);
+        $('#advanced-mail-status').text(res.has_password ? '授权码已保存，不会回显；留空保留原值。' : '尚未保存邮件配置，请填写授权码。');
+        $('#advanced-mail-save').prop('disabled', false);
+    }).fail(function() { layer.msg('读取邮件配置失败，请刷新重试'); });
+    form.on('submit(advanced-mail-save)', function(data) {
+        var button = $('#advanced-mail-save');
+        if (button.prop('disabled')) return false;
+        button.prop('disabled', true);
+        $.ajax({url: '/Admin/advanced', type: 'POST', data: data.field, dataType: 'json'})
+          .done(function(res) {
+              layer.msg((res && res.msg) || '保存失败');
+              if (res && res.code === 0) {
+                  $('[lay-filter="advanced-mail-form"] input[name="password"]').val('');
+                  $('#advanced-mail-status').text('授权码已保存，不会回显；留空保留原值。');
+              }
+          }).fail(function() { layer.msg('保存请求失败，请检查登录状态或服务器日志'); })
+          .always(function() { button.prop('disabled', false); });
+        return false;
+    });
+});
+</script>

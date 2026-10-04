@@ -67,9 +67,65 @@ class Admin extends Common
     public function advanced()
     {
         $this->checkLogin();
-		$this->checkPower();
+        $this->checkPower();
+        if (!\think\facade\Session::has('mail_settings_csrf')) {
+            \think\facade\Session::set('mail_settings_csrf', bin2hex(random_bytes(32)));
+        }
+        $csrf = \think\facade\Session::get('mail_settings_csrf');
+        if (request()->isPost()) {
+            $data = request()->post();
+            if (!isset($data['csrf']) || !is_string($data['csrf']) || !hash_equals($csrf, $data['csrf'])) {
+                return json(['code' => -1, 'msg' => '页面已失效，请刷新后重试']);
+            }
+            try {
+                foreach (['host', 'from', 'username', 'from_name', 'password', 'port', 'security'] as $key) {
+                    if (isset($data[$key]) && !is_scalar($data[$key])) throw new \InvalidArgumentException('配置格式不正确');
+                }
+                $host = trim((string)($data['host'] ?? ''));
+                $from = trim((string)($data['from'] ?? ''));
+                $username = trim((string)($data['username'] ?? ''));
+                $name = trim((string)($data['from_name'] ?? ''));
+                $port = filter_var($data['port'] ?? '', FILTER_VALIDATE_INT);
+                $security = (string)($data['security'] ?? 'ssl');
+                if (!preg_match('/^[a-zA-Z0-9](?:[a-zA-Z0-9.-]{0,251}[a-zA-Z0-9])?$/D', $host)) throw new \InvalidArgumentException('请输入 SMTP 服务器域名，不要填写网址或路径');
+                if (!filter_var($from, FILTER_VALIDATE_EMAIL)) throw new \InvalidArgumentException('请输入有效的发件邮箱');
+                if ($username === '' || strlen($username) > 254 || preg_match('/[\r\n]/', $username)) throw new \InvalidArgumentException('请输入有效的 SMTP 登录账号');
+                if ($name === '' || strlen($name) > 150 || preg_match('/[\r\n]/', $name)) throw new \InvalidArgumentException('请输入有效的发件人名称');
+                if ($port === false || $port < 1 || $port > 65535) throw new \InvalidArgumentException('端口必须为 1 到 65535');
+                if (!in_array($security, ['ssl', 'tls'], true)) throw new \InvalidArgumentException('请选择 SSL 或 STARTTLS 加密');
+                $old = \PHPMailer\MailSettings::read();
+                $password = (string)($data['password'] ?? '');
+                if ($password === '') {
+                    if (!empty($old['password']) && (($old['from'] ?? '') !== $from || ($old['username'] ?? '') !== $username || ($old['host'] ?? '') !== $host)) {
+                        throw new \InvalidArgumentException('更换邮箱、账号或服务器时，请重新填写授权码');
+                    }
+                    $password = $old['password'] ?? '';
+                }
+                if ($password === '' || strlen($password) > 512 || preg_match('/[\r\n\x00]/', $password)) throw new \InvalidArgumentException('首次配置请填写有效的邮箱授权码');
+                \PHPMailer\MailSettings::save(['host' => $host, 'from' => $from, 'username' => $username, 'from_name' => $name, 'port' => $port, 'security' => $security, 'password' => $password]);
+                return json(['code' => 0, 'msg' => '邮件配置已保存，后续发送将使用新配置（尚未验证 SMTP 连通性）']);
+            } catch (\Throwable $e) {
+                return json(['code' => -1, 'msg' => $e->getMessage()]);
+            }
+        }
+        View::assign('mailSettingsCsrf', $csrf);
         return View::fetch('admin/advanced/index');
     }
+
+    public function mailSettingsData()
+    {
+        $this->checkLogin();
+        $this->checkPower();
+        try {
+            $settings = \PHPMailer\MailSettings::read();
+            $hasPassword = !empty($settings['password']);
+            unset($settings['password']);
+            return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword]);
+        } catch (\Throwable $e) {
+            return json(['code' => -1, 'msg' => $e->getMessage()]);
+        }
+    }
+
 
     public function userinfo()
     {
