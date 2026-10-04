@@ -1,5 +1,15 @@
 -- MySQL dump 10.13  Distrib 5.7.44, for Linux (x86_64)
 --
+-- Host: localhost    Database: music_player
+-- ------------------------------------------------------
+-- Server version	5.7.44-log
+--
+-- 创建数据库并使用
+CREATE DATABASE IF NOT EXISTS `music_player` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `music_player`;
+
+-- MySQL dump 10.13  Distrib 5.7.44, for Linux (x86_64)
+--
 -- Host: localhost    Database: music_ovoeo_cn
 -- ------------------------------------------------------
 -- Server version	5.7.44-log
