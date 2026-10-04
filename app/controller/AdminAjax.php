@@ -214,10 +214,9 @@ private function getFilesize($size)
 				],[
 					'jump'	=>	'/orders/act/list',
 					'title'	=>	'订单列表'
-	],
-	[
-					'jump'	=>	'/serverstate',
+				],
 				[
+					'jump'	=>	'/serverstate',
 					'title'	=>	'服务器管理'
 				]
 			];
