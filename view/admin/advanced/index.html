@@ -16,10 +16,10 @@
 }
 </style>
 <div class="layui-fluid"><div class="layui-card">
-  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件服务</div>
+  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件与服务器授权</div>
   <div class="layui-card-body">
     <blockquote class="layui-elem-quote">配置用于注册及找回密码的验证码邮件。请使用邮箱的 SMTP 授权码，而非登录密码。建议通过 HTTPS 打开后台再填写授权码。</blockquote>
-    <div class="layui-tab advanced-mail-tabs"><ul class="layui-tab-title"><li class="layui-this">SMTP配置</li><li>邮件模板与测试</li></ul><div class="layui-tab-content"><div class="layui-tab-item layui-show">
+    <div class="layui-tab advanced-mail-tabs"><ul class="layui-tab-title"><li class="layui-this">SMTP配置</li><li>邮件模板与测试</li><li>服务器授权</li></ul><div class="layui-tab-content"><div class="layui-tab-item layui-show">
     <form class="layui-form" lay-filter="advanced-mail-form" autocomplete="off">
       <input type="hidden" name="csrf" value="{$mailSettingsCsrf}">
 <div class="layui-form-item"><label class="layui-form-label">SMTP服务器</label><div class="layui-input-block"><input class="layui-input" type="text" name="host" value="smtp.qq.com" placeholder="如 smtp.qq.com，不要加 https://" autocomplete="new-password" lay-verify="required"></div></div>
@@ -44,6 +44,13 @@
 <input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="test">
 <div class="layui-form-item"><label class="layui-form-label">测试收件箱</label><div class="layui-input-block"><input class="layui-input" type="email" name="test_email" placeholder="用于接收测试邮件，不改变发件邮箱" lay-verify="required|email"></div></div>
 <div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn layui-btn-normal mail-template-button" disabled lay-submit lay-filter="mail-test-send">发送测试邮件</button><p>使用已保存的 SMTP 和模板；修改后请先保存。测试验证码为123456，不可用于注册或找回密码。</p></div></div>
+</form></div><div class="layui-tab-item">
+<blockquote class="layui-elem-quote">用于音乐解析接口的服务器授权，与播放器域名授权不同。保存配置不代表已取得外部服务授权。请通过 HTTPS 填写密钥。</blockquote>
+<form class="layui-form" lay-filter="server-auth-form" autocomplete="off">
+<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="server_auth">
+<div class="layui-form-item"><label class="layui-form-label">授权QQ</label><div class="layui-input-block"><input class="layui-input" name="auth_qq" type="text" inputmode="numeric" placeholder="外部服务授权的QQ" lay-verify="required"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">授权密钥</label><div class="layui-input-block"><input class="layui-input" name="auth_skey" type="password" autocomplete="new-password" placeholder="首次必填；留空保留已保存密钥"></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><p id="server-auth-status">正在读取授权配置…</p><button class="layui-btn mail-template-button" type="button" disabled lay-submit lay-filter="server-auth-save">保存授权配置</button></div></div>
 </form></div></div></div>
 
   </div></div></div>
@@ -54,13 +61,15 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
     $.ajax({url: '/Admin/mailSettingsData', type: 'GET', dataType: 'json', cache: false}).done(function(res) {
         if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
         if (typeof res.csrf !== 'string' || !/^[a-f0-9]{64}$/.test(res.csrf)) { layer.msg('安全令牌读取失败，请重新登录后重试'); return; }
-        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"]').find('input[name="csrf"]').val(res.csrf);
+        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"]').find('input[name="csrf"]').val(res.csrf);
         var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
         allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
         form.val('advanced-mail-form', fields);
         var templateFields = {};
         ['template_title','template_body','homepage'].forEach(function(key) { if (res.data && res.data[key] != null) templateFields[key] = res.data[key]; });
         form.val('mail-template-form', templateFields);
+        form.val('server-auth-form', {auth_qq: (res.data && res.data.auth_qq) || ''});
+        $('#server-auth-status').text(res.has_auth_key ? '授权密钥已保存，不会回显；更换QQ需重新填写密钥。' : '尚未保存授权配置，当前沿用代码原有配置。');
         $('.mail-template-button').prop('disabled', false);
         $('#advanced-mail-status').text(res.has_password ? '授权码已保存，不会回显；留空保留原值。' : '尚未保存邮件配置，请填写授权码。');
         $('#advanced-mail-save').prop('disabled', false);
@@ -70,11 +79,12 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
         if (button.prop('disabled')) return false;
         button.prop('disabled', true);
         $.ajax({url: '/Admin/advanced', type: 'POST', data: data.field, dataType: 'json', timeout: 60000})
-          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); })
+          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
           .fail(function() { layer.msg('请求失败或超时，请检查登录状态及服务器；不要立即重复发送'); })
           .always(function() { button.prop('disabled', false); });
         return false;
     }
+    form.on('submit(server-auth-save)', mailAction);
     form.on('submit(mail-template-save)', mailAction);
     form.on('submit(mail-test-send)', mailAction);
     form.on('submit(advanced-mail-save)', function(data) {

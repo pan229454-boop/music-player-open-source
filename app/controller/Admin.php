@@ -80,6 +80,20 @@ class Admin extends Common
             try {
                 $action = $data['action'] ?? 'smtp';
                 if (!is_string($action)) throw new \InvalidArgumentException('请求格式不正确');
+                if ($action === 'server_auth') {
+                    $qq = $data['auth_qq'] ?? '';
+                    $key = $data['auth_skey'] ?? '';
+                    if (!is_string($qq) || !preg_match('/^[1-9][0-9]{4,19}$/D', $qq)) throw new \InvalidArgumentException('请输入5到20位数字授权QQ');
+                    if (!is_string($key) || strlen($key) > 512 || preg_match('/[\x00-\x20\x7f]/', $key)) throw new \InvalidArgumentException('授权密钥格式不正确，不能包含空白字符');
+                    $settings = \PHPMailer\ServerAuthSettings::read();
+                    if ($key === '') {
+                        if (($settings['qq'] ?? '') !== $qq) throw new \InvalidArgumentException('首次配置或更换授权QQ时，请填写授权密钥');
+                        $key = $settings['skey'] ?? '';
+                    }
+                    if ($key === '') throw new \InvalidArgumentException('首次配置请填写授权密钥');
+                    \PHPMailer\ServerAuthSettings::save(['qq' => $qq, 'skey' => $key]);
+                    return json(['code' => 0, 'msg' => '服务器授权配置已保存，尚未验证外部授权是否有效']);
+                }
                 if ($action === 'template') {
                     foreach (['template_title', 'template_body', 'homepage'] as $key) {
                         if (!isset($data[$key]) || !is_string($data[$key])) throw new \InvalidArgumentException('模板格式不正确');
@@ -157,9 +171,12 @@ class Admin extends Common
             }
             // Persist before returning the token used by all three forms.
             \think\facade\Session::save();
+            $auth = \PHPMailer\ServerAuthSettings::read();
+            $settings['auth_qq'] = $auth['qq'] ?? '';
+            $hasAuthKey = !empty($auth['skey']);
             $hasPassword = !empty($settings['password']);
             unset($settings['password']);
-            return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword, 'csrf' => $csrf])->header(['Cache-Control' => 'no-store, private']);
+            return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword, 'has_auth_key' => $hasAuthKey, 'csrf' => $csrf])->header(['Cache-Control' => 'no-store, private']);
         } catch (\Throwable $e) {
             return json(['code' => -1, 'msg' => $e->getMessage()]);
         }

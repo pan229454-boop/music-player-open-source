@@ -26,6 +26,17 @@ class Common extends BaseController
 			'qq'	=>	'2963246343', // 你的授权QQ
 			'skey'	=>	'music-*******', // 你的 skey
 		];
+        // Saved credentials override legacy defaults; malformed files fail closed.
+        try {
+            $auth = \PHPMailer\ServerAuthSettings::read();
+            if ($auth) {
+                $data['qq'] = $auth['qq'];
+                $data['skey'] = $auth['skey'];
+            }
+        } catch (\Throwable $e) {
+            $data['qq'] = '';
+            $data['skey'] = '';
+        }
 		Config::set($data, 'api');
     }
 	
