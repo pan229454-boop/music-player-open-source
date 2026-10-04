@@ -1,4 +1,14 @@
+<?php
+namespace app\controller;
 
+use app\base\Controller;
+use app\model\Users;
+use think\facade\View;
+use think\facade\Request;
+use think\facade\Db;
+
+class Admin extends Controller
+{
     /**
      * 高级设置页面
      */
@@ -6,7 +16,7 @@
     {
         $this->checkLogin();
         $this->checkPower();
-        return View::fetch();
+        return View::fetch('admin/advanced/index');
     }
     
     /**
@@ -62,3 +72,4 @@
             return json(['status' => 'error', 'message' => '创建失败，请重试']);
         }
     }
+}
