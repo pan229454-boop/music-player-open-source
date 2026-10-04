@@ -1,0 +1,14 @@
+function generateSign(songId, timestamp) {
+    const key = "guiybfqyyds";
+    let baseString = songId + ":" + timestamp + ":" + key;
+    let charArray = [];
+
+    for (let i = 0; i < baseString.length; i++) {
+        let charCode = baseString.charCodeAt(i);
+        charCode = (charCode + (i % 7) * 3) ^ (i % 5);
+        charArray.push(charCode);
+    }
+
+    let hexString = charArray.map(num => num.toString(16).padStart(2, '0')).join('');
+    return hexString.split('').reverse().join('');
+}

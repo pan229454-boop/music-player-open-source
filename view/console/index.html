@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"> 
+  <title>控制面板</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <!--<script src="/static/fontawesome/css/fontawesome.min.css"></script>-->
+    <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/fontawesome.min.css">
+  <link rel="stylesheet" href="./res/layui/css/layui.css" media="all"> 
+  <script>
+  /^http(s*):\/\//.test(location.href) || alert('请先部署到 localhost 下再访问');
+  </script>
+</head>
+<body>
+  <div id="LAY_app"></div>
+  <script src="./res/layui/layui.js"></script>
+  <script src="/static/js/jquery.min.js"></script>
+  <script src="/static/js/jquery.qrcode.js"></script>
+ <script src="/static/lib/d.js"></script>
+<script>
+  layui.config({
+    base: '/res/', // 静态资源所在路径
+    version: new Date().getTime()
+  }).use('index', function(){
+    var layer = layui.layer;
+    var admin = layui.admin;
+  });
+  </script>
+</body>
+</html>

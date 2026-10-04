@@ -1,0 +1,179 @@
+<script src="/static/js/clipboard.min.js"></script>
+<style>
+    .url {
+        word-break: break-all;
+        cursor: pointer;
+        margin-left: 5px;
+        color: #777;
+        border: none;
+        border-radius: 0;
+        border-bottom: 2px solid #5FB878;
+    }
+    .table-container {
+        overflow-x: auto;
+    }
+    .layui-table {
+        min-width: 600px; 
+    }
+    .simpleTable {
+        line-height: 20px;
+        padding-bottom: 16px;
+    }
+    .linep {
+        font-size: 14px;
+        font-weight: 700;
+        color: #555;
+        padding-left: 14px;
+        height: 16px;
+        line-height: 16px;
+        margin-bottom: 18px;
+        position: relative;
+        margin-top: 15px;
+    }
+    .linep:before {
+        content: '';
+        width: 4px;
+        height: 16px;
+        background: #00aeff;
+        border-radius: 2px;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    ::-webkit-scrollbar {
+        width: 9px;
+        height: 9px
+    }
+    ::-webkit-scrollbar-track-piece {
+        background-color: #ebebeb;
+        -webkit-border-radius: 4px
+    }
+    ::-webkit-scrollbar-thumb:vertical {
+        height: 32px;
+        background-color: #ccc;
+        -webkit-border-radius: 4px
+    }
+    ::-webkit-scrollbar-thumb:horizontal {
+        width: 32px;
+        background-color: #ccc;
+        -webkit-border-radius: 4px
+    }
+</style>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">歌曲MP3地址API文档</div>
+                <div class="layui-card-body">
+                    <div class="layui-form layui-form-pane">
+                        <blockquote class="layui-elem-quote">以歌曲ID获取HTTPS歌曲MP3地址，支持网易/QQ/酷狗</blockquote>
+                       <p class="simpleTable">
+                            <span class="layui-badge layui-bg-blue">缓存刷新：</span>
+                            <span style="margin-left: 5px;">实时</span>
+                        </p>
+                        <p class="simpleTable">
+                            <span class="layui-badge layui-bg-green">返回格式：</span>
+                            <span style="margin-left: 5px;">JSON</span>
+                        </p>
+                        <p class="simpleTable">
+                            <span class="layui-badge">请求方式：</span>
+                            <span style="margin-left: 5px;">GET</span>
+                        </p>
+                        <p class="simpleTable">
+                            <span class="layui-badge layui-bg-black">接口地址：</span>
+                            <span class="url" id="api-url" data-clipboard-text="{:get_domain()}music/url">{:get_domain()}music/url</span>
+                        </p>
+                        <p class="linep">请求参数说明：</p>
+                        <div class="table-container">
+                            <table class="layui-table" lay-size="sm">
+                                <thead>
+                                    <tr>
+                                        <th>参数</th>
+                                        <th>必填</th>
+                                        <th>说明</th>
+                                        <th>示例</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>url</td>
+                                        <td>是</td>
+                                        <td>接口</td>
+                                        <td id="url-example">{:get_domain()}music/url</td>
+                                    </tr>
+                                    <tr>
+                                        <td>token</td>
+                                        <td>是</td>
+                                        <td>用户 Token</td>
+                                        <td id="token-example">加载中...</td>
+                                    </tr>
+                                    <tr>
+                                        <td>type</td>
+                                        <td>是</td>
+                                        <td>netease/qq/kugou</td>
+                                        <td id="type-example">type=qq</td>
+                                    </tr>
+                                    <tr>
+                                        <td>songId</td>
+                                        <td>是</td>
+                                        <td>歌曲ID</td>
+                                        <td id="name-example">songId=003RnE490CEC1F</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="linep">请求示例：</p>
+                        <blockquote class="layui-elem-quote">
+                            <a id="example-url" href="#" target="_blank" class="url">加载中...</a>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['jquery'], function() {
+        var $ = layui.jquery;
+
+        // 获取用户信息
+        $.getJSON('/AdminAjax/userInfo', function(res) {
+            if (res.code === 0 && res.data) {
+                var token = res.data.token2;
+               var apiUrl = `{:get_domain()}music/url?token=${token}&type=qq&songId=003RnE490CEC1F`;
+             //  var apiUrl = `{:get_domain()}favicon?url=https://music.qsdurl.cn`;
+                
+                $('#token-example').text(token);
+                $('#example-url').attr('href', apiUrl).text(apiUrl);
+                $('#api-url').attr('data-clipboard-text', apiUrl);
+            } else {
+                $('#token-example').text('获取 token 失败');
+            }
+        }).fail(function() {
+            $('#token-example').text('请求失败');
+        });
+    });
+
+    function copyToClipboard(element) {
+        var range, selection;
+        if (document.createRange) {
+            range = document.createRange();
+            range.selectNode(document.querySelector(element));
+            selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand('copy');
+            selection.removeAllRanges();
+        }
+    }
+
+    var clipboard = new ClipboardJS('.url');
+    clipboard.on('success', function(e) {
+        layer.msg("复制成功，请粘贴使用！", {icon: 1});
+        e.clearSelection();
+    });
+    clipboard.on('error', function(e) {
+        layer.msg("复制失败，请手动复制！", {icon: 2});
+    });
+</script>

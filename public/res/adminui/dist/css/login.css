@@ -1,0 +1,211 @@
+/** layuiAdmin.pro-v1.2.1 LPPL License By http://www.layui.com/admin/ */
+#LAY_app,
+body,
+html {
+    height: 100%
+}
+
+body::-webkit-scrollbar {
+    width: 6px;
+    height: 6px
+}
+
+body::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb:hover {
+    background-color: #edb1cb;
+}
+
+body::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 0 #edb1cb;
+}
+
+body:before {
+    content: "";
+    position: fixed;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /*背景图片*/
+    background: url('/lihua/image/bg.jpg') center 0 no-repeat; 
+    background-size: cover;
+}
+
+.layui-layout-body {
+    overflow: auto
+}
+
+#LAY-user-login,
+.layadmin-user-display-show {
+    display: block !important
+}
+
+.layadmin-user-login {
+    position: relative;
+    left: 0;
+    top: 0;
+    padding: 110px 0;
+    min-height: 100%;
+    box-sizing: border-box;
+    /*background: linear-gradient(rgb(255 214 214 / 31%), rgb(218 218 218 / 73%)), url(https://cdn-hw-static.shanhutech.cn/bizhi/staticwp/202210/b44a1c428836eb9ba869a4878225b044--189339907.jpg) no-repeat 100% 100%/ 100% 100%;*/
+}
+
+.layadmin-user-login-main {
+    width: 375px;
+    margin: 130px 250px;
+    box-sizing: border-box;
+    box-shadow: 0 0 15px 2px #868686;
+    border-radius: 15px;
+    /*本地图片，外链图片失效可以替换成本地图*/
+    background-image: url(/lihua/image/loginbg.jpg);
+    /* background-image: url(https://pic1.58cdn.com.cn/nowater/webim/big/n_v20994664e2072443598fb2c0b0f898275.jpg); */
+    background-size: 100% 115%;
+}
+
+.layadmin-user-login-box {
+    padding: 20px
+}
+
+.layadmin-user-login-header {
+    text-align: center
+}
+
+.layadmin-user-login-header h2 {
+    margin-bottom: 10px;
+    font-weight: 300;
+    font-size: 30px;
+    color: #000
+}
+
+.layadmin-user-login-header p {
+    font-weight: 300;
+    color: #999
+}
+
+.layadmin-user-login-body .layui-form-item {
+    position: relative
+}
+
+.layadmin-user-login-icon {
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    width: 38px;
+    line-height: 36px;
+    text-align: center;
+    color: #d2d2d2
+}
+
+.layadmin-user-login-body .layui-form-item .layui-input {
+    padding-left: 38px
+}
+
+.layadmin-user-login-codeimg {
+    max-height: 38px;
+    width: 100%;
+    cursor: pointer;
+    box-sizing: border-box
+}
+
+.layadmin-user-login-other {
+    position: relative;
+    font-size: 0;
+    line-height: 38px;
+    padding-top: 20px
+}
+
+.layadmin-user-login-other>* {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    font-size: 14px
+}
+
+.layadmin-user-login-other .layui-icon {
+    position: relative;
+    top: 2px;
+    font-size: 26px
+}
+
+.layadmin-user-login-other a:hover {
+    opacity: .8
+}
+
+.layadmin-user-jump-change {
+    float: right
+}
+
+.layadmin-user-login-footer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    line-height: 30px;
+    padding: 20px;
+    text-align: center;
+    box-sizing: border-box;
+    color: rgba(0, 0, 0, .5)
+}
+
+.layadmin-user-login-footer span {
+    padding: 0 5px
+}
+
+.layadmin-user-login-footer a {
+    padding: 0 5px;
+    color: rgba(0, 0, 0, .5)
+}
+
+.layadmin-user-login-footer a:hover {
+    color: rgba(0, 0, 0, 1)
+}
+
+.layadmin-user-login-main[bgimg] {
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0, 0, 0, .05)
+}
+
+.ladmin-user-login-theme {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center
+}
+
+.ladmin-user-login-theme ul {
+    display: inline-block;
+    padding: 5px;
+    background-color: #fff
+}
+
+.ladmin-user-login-theme ul li {
+    display: inline-block;
+    vertical-align: top;
+    width: 64px;
+    height: 43px;
+    cursor: pointer;
+    transition: all .3s;
+    -webkit-transition: all .3s;
+    background-color: #f2f2f2
+}
+
+.ladmin-user-login-theme ul li:hover {
+    opacity: .9
+}
+
+@media screen and (max-width:768px) {
+    .layadmin-user-login {
+        padding-top: 60px
+    }
+
+    .layadmin-user-login-main {
+        width: 300px;
+        margin: auto;
+    }
+
+    .layadmin-user-login-box {
+        padding: 10px
+    }
+}

@@ -1,0 +1,123 @@
+body {
+            font-family: '微软雅黑', '苹方', sans-serif;
+            background-color: #f4f6f9;
+            color: #444;
+            line-height: 1.8;
+            padding: 0 15px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        p {
+            color: #555;
+        }
+        .hero {
+            padding: 100px 0;
+            text-align: center;
+          //  background: linear-gradient(135deg, #87CEFA 0%, #4682B4 100%);
+            color: white;
+            border-radius: 0 0 50% 50%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+        }
+        .hero p {
+            font-size: 22px;
+            margin-bottom: 30px;
+        }
+        .btn-custom {
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+    background-color: #000; /* 黑色背景 */
+    border: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.btn-outline-light {
+    border: 2px solid #000; /* 白色边框 */
+    color: #000; /* 白色文字 */
+}
+
+        .btn-custom:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .section-title {
+            font-size: 36px;
+            margin: 60px 0 20px;
+            text-align: center;
+            font-weight: 700;
+            color: #2c3e50;
+            letter-spacing: 1px;
+        }
+        .section-subtitle {
+            font-size: 18px;
+            color: #888;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .service-icon {
+            font-size: 48px;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .card {
+            margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+        .card-body {
+            padding: 30px;
+            text-align: center;
+        }
+        .about-bg {
+            background-color: #ffffff;
+            padding: 2px 0;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .about-content p {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .about-image img {
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .about-image img:hover {
+            transform: scale(1.05);
+        }
+        footer {
+            padding: 40px 0;
+            background-color: #333;
+            color: white;
+            text-align: center;
+        }
+        footer p {
+            margin: 0;
+            font-size: 14px;
+        }
+        footer a {
+            color: white;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }

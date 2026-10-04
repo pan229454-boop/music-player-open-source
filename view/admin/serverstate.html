@@ -1,0 +1,62 @@
+<div class="layui-container">
+    <h1 class="layui-bg-blue" style="padding: 15px; color: white; text-align: center; border-radius: 5px;">服务器运行状态</h1>
+    <table class="layui-table" id="serverTable" lay-filter="serverTable"></table>
+</div>
+
+<script type="text/html" id="operationBar">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="stop">停止</a>
+</script>
+
+<script>
+    layui.use(['table', 'jquery', 'layer'], function() {
+        var table = layui.table;
+        var $ = layui.$;
+        var layer = layui.layer;
+
+        // 获取服务器状态
+        $.get('/serverStatus/getStatus', function(res) {
+            if (res.status === 'success') {
+                table.render({
+                    elem: '#serverTable',
+                    cols: [[
+                        { field: 'pid', title: 'PID', width: 100, sort: true },
+                        { field: 'user', title: '用户', width: 120 },
+                        { field: 'cpu', title: 'CPU%', width: 100, sort: true },
+                        { field: 'mem', title: '内存%', width: 100, sort: true },
+                        { field: 'command', title: '命令', width: 300 },
+                        { toolbar: '#operationBar', title: '操作', width: 120 }
+                    ]],
+                    data: res.data,
+                    page: true, // 开启分页
+                    limit: 10, // 每页显示10条
+                    height: 'full-200', // 自适应高度
+                    text: { none: '暂无数据' } // 没有数据时的提示
+                });
+            } else {
+                layer.msg('获取服务器状态失败，请重试。', { icon: 5 });
+            }
+        });
+
+        // 监听工具条
+        table.on('tool(serverTable)', function(obj) {
+            var data = obj.data;
+            if (obj.event === 'stop') {
+                layer.confirm('确定要停止该进程吗？', { icon: 3, title: '提示' }, function(index) {
+                    $.post('/serverStatus/stopProcess', { pid: data.pid }, function(res) {
+                        layer.msg(res.message);
+                        if (res.status === 'success') {
+                            obj.del(); // 删除表格中的该行
+                        }
+                    });
+                    layer.close(index);
+                });
+            }
+        });
+    });
+</script>
+
+<style>
+    .layui-bg-blue {
+        background-color: #1E9FFF; /* 调整背景色 */
+    }
+</style>

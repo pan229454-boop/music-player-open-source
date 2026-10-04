@@ -1,0 +1,59 @@
+<div class="layui-col-md6">
+        <div class="layui-card">
+            <div class="layui-card-header">修改QQ号</div>
+            <div class="layui-card-body">
+            <blockquote class="layui-elem-quote">QQ号主要用于授权查询，系统邮件通知和找回密码
+					</blockquote>
+                <form class="layui-form" action="" lay-filter="changeQQForm">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">当前QQ</label>
+                        <div class="layui-input-block">
+                            <script type="text/html" template lay-url="/AdminAjax/userInfo" >
+                            <input type="text" id="currentQQ" value="{{ d.data.qq }}" disabled class="layui-input">
+                            </script>
+                        </div>
+                        </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">新QQ</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="newQQ" name="newQQ" required lay-verify="required" placeholder="请输入新的QQ号" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit lay-filter="submitChangeQQ">立即修改</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        layui.use(['form', 'layer'], function() {
+            var form = layui.form,
+                $ = layui.jquery,
+                layer = layui.layer;
+            
+            form.on('submit(submitChangeQQ)', function(data) {
+                var newQQ = $("#newQQ").val();
+                
+                layer.confirm('确定要将QQ号修改为：' + newQQ + ' 吗？', {
+                    btn: ['确定', '取消']
+                }, function(index) {
+                    var index = layer.load(3);
+                    $.post("/AdminAjax/changeQQ", { newQQ: newQQ }, function(res) {
+                        layer.close(index);
+                        layer.msg(res.message);
+                        if (res.code === 0) {
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        }
+                    });
+                }, function() {});
+                
+                return false;
+            });
+        });
+    </script>

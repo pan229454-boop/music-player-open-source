@@ -1,0 +1,2 @@
+
+{"code":0,"msg":"","count":1,"data":[{"uid":"1","username":"admin","money":"1100.00元","deduct":"999.00元","daymoney":"1100.00元","daydeduct":"999.00元"},{"uid":"2","username":"xinyan","money":"9100.00元","deduct":"9890.00元","daymoney":"1100.00元","daydeduct":"999.00元"},{"uid":"3","username":"occyun","money":"5100.00元","deduct":"3890.00元","daymoney":"1100.00元","daydeduct":"999.00元"}]}

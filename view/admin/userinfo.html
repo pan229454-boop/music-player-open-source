@@ -1,0 +1,116 @@
+<style>
+  .layui-card-header {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    cursor: pointer; /* 显示点击手势 */
+  }
+  
+  .button-container {
+    display: flex;
+    align-items: center;
+  }
+
+  .reset-btn {
+    margin-left: 10px;
+    cursor: pointer;
+    color: #FF5722; /* 红色提示 */
+  }
+
+  .layui-badge {
+    display: flex;
+    align-items: center;
+  }
+</style>
+
+<!--<div class="layui-card layadmin-header">
+  <div class="layui-breadcrumb" lay-filter="breadcrumb">
+    <a lay-href="">控制面板</a>
+    <a><cite>基本资料</cite></a>
+  </div>
+</div>-->
+
+<div class="layui-fluid">
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md6">
+      <div class="layui-card">
+        <div class="layui-card-header">
+          账户信息
+          <span class="layui-badge layuiadmin-badge" style="background-color:transparent">
+            <div class="button-container">
+              {if condition="$userInfo.token neq ''"}
+                <a href="/Admin/QqLoginSet" class="layui-btn layui-btn-xs layui-btn-normal">更换QQ登录</a>
+              {else /}
+                <a href="/Admin/QqLoginSet" class="layui-btn layui-btn-xs layui-btn-normal">绑定QQ登录</a>
+              {/if}
+              <span class="layui-btn layui-btn-xs layui-btn-normal" onclick="resetToken()">重置密钥</span>
+            </div>
+          </span>
+        </div>
+        <script type="text/html" template lay-url="/AdminAjax/userInfo">
+          <div class="layui-card-body">
+            <div class="layui-card-header">用户名：{{ d.data.username }}</div>
+            <div class="layui-card-header">QQ：{{ d.data.qq }}</div>
+            <div class="layui-card-header">邮箱：{{ d.data.mail }}</div>
+            <div class="layui-card-header" onclick="copyToClipboard('#token')">
+              密钥：<span id="token">{{ d.data.token2 }}</span>
+            </div>
+            <div class="layui-card-header">播放器额度：{{ d.data.pie }}</div>
+            <div class="layui-card-header">接口额度：{{ d.data.limit2 }}</div>
+            <div class="layui-card-header">歌单合计：{$sheets}个</div>
+            <div class="layui-card-header">注册时间：{{ d.data.regtime }}</div>
+            <div class="layui-card-header">最近登录：{:date('h:i:s',$userInfo['time'])}</div>
+            <div class="layui-card-header">创建IP：{{ d.data.regip }}</div>
+            <div class="layui-card-header">登录地址：{{ d.data.city }}</div>
+            <div class="layui-card-header">账户类型：{{ d.data.lv }}</div>
+          </div>
+        </script>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  layui.use(['layer', 'jquery'], function(){
+    var layer = layui.layer;
+    var $ = layui.$;
+
+    window.copyToClipboard = function(selector) {
+      var text = document.querySelector(selector).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        layer.msg('密钥已复制到剪贴板！');
+      }).catch(err => {
+        console.error('复制失败:', err);
+        layer.alert('复制失败！', { icon: 2 });
+      });
+    };
+
+    window.resetToken = function() {
+      layer.confirm('确定要重置密钥吗？<br>重置后需使用新的密钥获取数据！', {icon: 3, title:'提示'}, function(index){
+        layer.load(); 
+        fetch('/AdminAjax/reset', {
+          method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+          layer.closeAll('loading'); // 关闭 loading
+          if (data.success) {
+            layer.msg('密钥已重置！');
+            document.getElementById('token').textContent = data.newToken;
+          } else {
+            layer.alert('密钥重置失败！', { icon: 2 });
+          }
+        })
+        .catch(err => {
+          layer.closeAll('loading'); // 关闭 loading
+          console.error('重置失败:', err);
+          layer.alert('重置失败！', { icon: 2 });
+        });
+
+        layer.close(index); // 关闭询问框
+      });
+    };
+  });
+</script>
