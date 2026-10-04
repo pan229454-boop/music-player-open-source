@@ -221,7 +221,8 @@ private function getFilesize($size)
 				],
 				[
 					'jump'	=>	'/advanced',
-					'title'	=>	'<i class=\"layui-icon layui-icon-set\"></i> 高级设置',[\t				'jump'	=>	'/advanced',\t				'title'	=>	'<i class="layui-icon layui-icon-set"></i> 高级设置'
+					'title'	=>	'<i class=\"layui-icon layui-icon-set\"></i> 高级设置'
+				],
 
 			];
 		}elseif($userInfo['power']==1){
