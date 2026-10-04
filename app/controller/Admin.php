@@ -69,6 +69,12 @@ class Admin extends Common
     public function advanced()
     {
         $this->checkLogin();
+.	$this->checkPower();
+        return View::fetch('admin/advanced/index');
+    }
+    public function advanced()
+    {
+        $this->checkLogin();
 		$this->checkPower();
         return View::fetch('admin/advanced/index');
     }
