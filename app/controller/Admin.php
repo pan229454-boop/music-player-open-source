@@ -80,7 +80,25 @@ class Admin extends Common
             try {
                 $action = $data['action'] ?? 'smtp';
                 if (!is_string($action)) throw new \InvalidArgumentException('请求格式不正确');
+                if ($action === 'music_source_save' || $action === 'music_source_toggle') {
+                    $enabled = $data['source_enabled'] ?? '';
+                    if (!is_string($enabled) || !in_array($enabled, ['0', '1'], true)) throw new \InvalidArgumentException('接口状态不正确');
+                    if ($action === 'music_source_toggle') {
+                        \PHPMailer\MusicSourceRegistry::setEnabled($data['source_id'] ?? '', $enabled === '1');
+                    } else {
+                        \PHPMailer\MusicSourceRegistry::upsert([
+                            'id' => $data['source_id'] ?? '',
+                            'name' => $data['source_name'] ?? '',
+                            'provider' => $data['source_provider'] ?? '',
+                            'endpoint' => $data['source_endpoint'] ?? '',
+                            'key' => $data['source_key'] ?? '',
+                            'enabled' => $enabled === '1'
+                        ]);
+                    }
+                    return json(['code' => 0, 'msg' => '接口配置已保存，尚未验证连接和套餐权限', 'sources' => \PHPMailer\MusicSourceRegistry::publicList()]);
+                }
                 if ($action === 'music_api') {
+                    return json(['code'=>-1,'msg'=>'请使用多接口管理列表保存配置']);
                     $provider = $data['music_provider'] ?? '';
                     $endpoint = $data['music_endpoint'] ?? '';
                     $key = $data['music_key'] ?? '';
@@ -203,6 +221,7 @@ class Admin extends Common
             $settings['music_provider'] = $music['provider'] ?? 'legacy';
             $settings['music_endpoint'] = $music['endpoint'] ?? 'http://shybot.top/v2/music/api/';
             $settings['has_music_key'] = !empty($music['key']);
+            $settings['music_sources'] = \PHPMailer\MusicSourceRegistry::publicList();
             return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword, 'has_auth_key' => $hasAuthKey, 'csrf' => $csrf])->header(['Cache-Control' => 'no-store, private']);
         } catch (\Throwable $e) {
             return json(['code' => -1, 'msg' => $e->getMessage()]);

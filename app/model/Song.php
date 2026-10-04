@@ -8,11 +8,16 @@ class Song extends Base
 	
     public static function findMusicInfo($data){
         try {
-            if (\PHPMailer\ShyMusic::enabled()) return \PHPMailer\ShyMusic::info($data['type'] ?? '', $data['songid'] ?? '');
-        } catch (\Exception $e) {
+            $sourceId = $data['music_source'] ?? 'legacy';
+            $source = \PHPMailer\MusicSourceRegistry::get($sourceId);
+            if ($source['provider'] === 'shymusic') {
+                $result = (new \PHPMailer\MusicSourceService($sourceId))->info($data['type'] ?? '', $data['songid'] ?? '');
+                $result['music_url'] = '/AdminAjax/Song/act/preview?' . http_build_query(['music_source'=>$sourceId, 'type'=>$data['type'] ?? '', 'songid'=>$data['songid'] ?? '']);
+                return $result;
+            }
+        } catch (\Throwable $e) {
             return ['code' => -1, 'msg' => $e->getMessage()];
         }
-
 		$json = send_get(Config::get('api.music').'?input='.$data['songid'].'&filter=id&type='.$data['type'].'&page=1&url='. $_SERVER['SERVER_NAME']);
 		$data=json_decode($json,true);
         if($data==''){
