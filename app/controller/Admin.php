@@ -74,7 +74,7 @@ class Admin extends Common
         $csrf = \think\facade\Session::get('mail_settings_csrf');
         if (request()->isPost()) {
             $data = request()->post();
-            if (!isset($data['csrf']) || !is_string($data['csrf']) || !hash_equals($csrf, $data['csrf'])) {
+            if (!isset($data['csrf']) || !is_string($data['csrf']) || !is_string($csrf) || !hash_equals($csrf, $data['csrf'])) {
                 return json(['code' => -1, 'msg' => '页面已失效，请刷新后重试']);
             }
             try {
@@ -150,9 +150,16 @@ class Admin extends Common
         $this->checkPower();
         try {
             $settings = \PHPMailer\MailSettings::read();
+            $csrf = \think\facade\Session::get('mail_settings_csrf');
+            if (!is_string($csrf) || strlen($csrf) !== 64) {
+                $csrf = bin2hex(random_bytes(32));
+                \think\facade\Session::set('mail_settings_csrf', $csrf);
+            }
+            // Persist before returning the token used by all three forms.
+            \think\facade\Session::save();
             $hasPassword = !empty($settings['password']);
             unset($settings['password']);
-            return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword]);
+            return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword, 'csrf' => $csrf])->header(['Cache-Control' => 'no-store, private']);
         } catch (\Throwable $e) {
             return json(['code' => -1, 'msg' => $e->getMessage()]);
         }

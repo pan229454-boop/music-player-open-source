@@ -34,8 +34,10 @@
 <script>
 layui.use(['form', 'jquery', 'layer', 'element'], function() {
     var form = layui.form, $ = layui.jquery, layer = layui.layer;
-    $.getJSON('/Admin/mailSettingsData').done(function(res) {
+    $.ajax({url: '/Admin/mailSettingsData', type: 'GET', dataType: 'json', cache: false}).done(function(res) {
         if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
+        if (typeof res.csrf !== 'string' || !/^[a-f0-9]{64}$/.test(res.csrf)) { layer.msg('安全令牌读取失败，请重新登录后重试'); return; }
+        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"]').find('input[name="csrf"]').val(res.csrf);
         var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
         allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
         form.val('advanced-mail-form', fields);
