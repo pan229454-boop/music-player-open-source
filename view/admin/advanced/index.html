@@ -16,10 +16,10 @@
 }
 </style>
 <div class="layui-fluid"><div class="layui-card">
-  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件与服务器授权</div>
+  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件、授权与音乐API</div>
   <div class="layui-card-body">
     <blockquote class="layui-elem-quote">配置用于注册及找回密码的验证码邮件。请使用邮箱的 SMTP 授权码，而非登录密码。建议通过 HTTPS 打开后台再填写授权码。</blockquote>
-    <div class="layui-tab advanced-mail-tabs"><ul class="layui-tab-title"><li class="layui-this">SMTP配置</li><li>邮件模板与测试</li><li>服务器授权</li></ul><div class="layui-tab-content"><div class="layui-tab-item layui-show">
+    <div class="layui-tab advanced-mail-tabs"><ul class="layui-tab-title"><li class="layui-this">SMTP配置</li><li>邮件模板与测试</li><li>服务器授权</li><li>音乐 API 配置</li></ul><div class="layui-tab-content"><div class="layui-tab-item layui-show">
     <form class="layui-form" lay-filter="advanced-mail-form" autocomplete="off">
       <input type="hidden" name="csrf" value="{$mailSettingsCsrf}">
 <div class="layui-form-item"><label class="layui-form-label">SMTP服务器</label><div class="layui-input-block"><input class="layui-input" type="text" name="host" value="smtp.qq.com" placeholder="如 smtp.qq.com，不要加 https://" autocomplete="new-password" lay-verify="required"></div></div>
@@ -56,6 +56,14 @@
 <div class="layui-form-item"><label class="layui-form-label">授权QQ</label><div class="layui-input-block"><input class="layui-input" name="auth_qq" type="text" inputmode="numeric" placeholder="外部服务授权的QQ" lay-verify="required"></div></div>
 <div class="layui-form-item"><label class="layui-form-label">授权密钥</label><div class="layui-input-block"><input class="layui-input" name="auth_skey" type="password" autocomplete="new-password" placeholder="首次必填；留空保留已保存密钥"></div></div>
 <div class="layui-form-item"><div class="layui-input-block"><p id="server-auth-status">正在读取授权配置…</p><button class="layui-btn mail-template-button" type="button" disabled lay-submit lay-filter="server-auth-save">保存授权配置</button></div></div>
+</form></div><div class="layui-tab-item">
+<blockquote class="layui-elem-quote">默认使用原接口。ShyMusic当前仅支持已验证的网易云搜索、播放及LRC歌词；QQ、酷狗和歌单导入尚未适配。切换不会自动回退到原接口。HTTP会明文传输密钥，建议先确认HTTPS入口的套餐权限；请勿公开密钥。</blockquote>
+<form class="layui-form" lay-filter="music-api-form" autocomplete="off">
+<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="music_api">
+<div class="layui-form-item"><label class="layui-form-label">音乐接口</label><div class="layui-input-block"><select name="music_provider"><option value="legacy">原接口（默认）</option><option value="shymusic">ShyMusic（网易云）</option></select></div></div>
+<div class="layui-form-item"><label class="layui-form-label">ShyMusic地址</label><div class="layui-input-block"><select name="music_endpoint"><option value="http://shybot.top/v2/music/api/">HTTP主站（已测试）</option><option value="https://shybot.top/v2/music/api/">HTTPS主站（待验证）</option><option value="https://cn2.shybot.top:48443/v2/music/api/">HTTPS备用站（套餐权限待确认）</option></select></div></div>
+<div class="layui-form-item"><label class="layui-form-label">API密钥</label><div class="layui-input-block"><input class="layui-input" name="music_key" type="password" autocomplete="new-password" placeholder="启用ShyMusic首次必填；留空保留已保存密钥"></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><p id="music-api-status">正在读取配置…</p><button type="button" class="layui-btn mail-template-button" disabled lay-submit lay-filter="music-api-save">保存音乐API配置</button><p>选择接口后必须保存；原服务器授权QQ和skey不适用于ShyMusic。配置仅存于服务器，不返回密钥。</p></div></div>
 </form></div></div></div>
 
   </div></div></div>
@@ -66,13 +74,15 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
     $.ajax({url: '/Admin/mailSettingsData', type: 'GET', dataType: 'json', cache: false}).done(function(res) {
         if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
         if (typeof res.csrf !== 'string' || !/^[a-f0-9]{64}$/.test(res.csrf)) { layer.msg('安全令牌读取失败，请重新登录后重试'); return; }
-        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"], [lay-filter="server-auth-switch-form"]').find('input[name="csrf"]').val(res.csrf);
+        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"], [lay-filter="server-auth-switch-form"], [lay-filter="music-api-form"]').find('input[name="csrf"]').val(res.csrf);
         var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
         allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
         form.val('advanced-mail-form', fields);
         var templateFields = {};
         ['template_title','template_body','homepage'].forEach(function(key) { if (res.data && res.data[key] != null) templateFields[key] = res.data[key]; });
         form.val('mail-template-form', templateFields);
+        form.val('music-api-form', {music_provider: res.data.music_provider || 'legacy', music_endpoint: res.data.music_endpoint || 'http://shybot.top/v2/music/api/'});
+        $('#music-api-status').text('服务器已保存接口：' + (res.data.music_provider === 'shymusic' ? 'ShyMusic（网易云）' : '原接口') + (res.data.has_music_key ? '；密钥已保存，不回显。' : '；尚未保存ShyMusic密钥。'));
         setAuthSwitch(res.data && res.data.skip_check === true);
         form.val('server-auth-form', {auth_qq: (res.data && res.data.auth_qq) || ''});
         $('#server-auth-status').text(res.has_auth_key ? '授权密钥已保存，不会回显；更换QQ需重新填写密钥。' : '尚未保存授权配置，当前沿用代码原有配置。');
@@ -94,11 +104,13 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
         if (button.prop('disabled')) return false;
         button.prop('disabled', true);
         $.ajax({url: '/Admin/advanced', type: 'POST', data: data.field, dataType: 'json', timeout: 60000})
-          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'server_auth_switch') { setAuthSwitch(res.skip_check === true); } if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
+          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'music_api') { $('[lay-filter="music-api-form"] input[name="music_key"]').val(''); $('#music-api-status').text('服务器已保存接口：' + (res.music_provider === 'shymusic' ? 'ShyMusic（网易云）' : '原接口') + (res.has_music_key ? '；密钥已保存，不回显。' : '；未保存密钥。')); } if (res && res.code === 0 && data.field.action === 'server_auth_switch') { setAuthSwitch(res.skip_check === true); } if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
           .fail(function() { layer.msg('请求失败或超时，请检查登录状态及服务器；不要立即重复发送'); })
           .always(function() { button.prop('disabled', false); });
         return false;
     }
+    form.on('submit(music-api-save)', mailAction);
+    form.on('select', function(data) { if ($(data.elem).closest('[lay-filter="music-api-form"]').length) $('#music-api-status').text('配置已修改，尚未保存。'); });
     form.on('submit(server-auth-switch-save)', mailAction);
     form.on('submit(server-auth-save)', mailAction);
     form.on('submit(mail-template-save)', mailAction);

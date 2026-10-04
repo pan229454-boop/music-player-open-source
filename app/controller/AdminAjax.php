@@ -766,6 +766,14 @@ $open_head = [
 				}
 			break;
 			case 'search':
+                try {
+                    if (\PHPMailer\ShyMusic::enabled()) {
+                        $query = input('get.');
+                        return json(['code' => 0, 'songs' => \PHPMailer\ShyMusic::search($query['type'] ?? '', $query['song_name'] ?? '')]);
+                    }
+                } catch (\Exception $e) {
+                    return json(['code' => -1, 'msg' => $e->getMessage(), 'songs' => []]);
+                }
 				$data=input('get.');
 				$s=$data['song_name'];
 				switch ($data['type']) {

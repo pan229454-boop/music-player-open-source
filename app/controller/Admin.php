@@ -80,6 +80,18 @@ class Admin extends Common
             try {
                 $action = $data['action'] ?? 'smtp';
                 if (!is_string($action)) throw new \InvalidArgumentException('请求格式不正确');
+                if ($action === 'music_api') {
+                    $provider = $data['music_provider'] ?? '';
+                    $endpoint = $data['music_endpoint'] ?? '';
+                    $key = $data['music_key'] ?? '';
+                    if (!is_string($key)) throw new \InvalidArgumentException('音乐API密钥格式不正确');
+                    $old = \PHPMailer\MusicApiSettings::read();
+                    if ($key === '') $key = $old['key'] ?? '';
+                    $config = ['provider' => $provider, 'endpoint' => $endpoint, 'key' => $key];
+                    \PHPMailer\MusicApiSettings::save($config);
+                    if (\PHPMailer\MusicApiSettings::read() !== $config) throw new \RuntimeException('音乐API配置写入校验失败');
+                    return json(['code' => 0, 'msg' => '音乐API配置已保存；未验证套餐权限', 'music_provider' => $provider, 'has_music_key' => $key !== '']);
+                }
                 if ($action === 'server_auth_switch') {
                     $value = $data['skip_check'] ?? '0';
                     if (!is_string($value) || !in_array($value, ['0', '1'], true)) throw new \InvalidArgumentException('授权开关值不正确');
@@ -187,6 +199,10 @@ class Admin extends Common
             $hasAuthKey = !empty($auth['skey']);
             $hasPassword = !empty($settings['password']);
             unset($settings['password']);
+            $music = \PHPMailer\MusicApiSettings::read();
+            $settings['music_provider'] = $music['provider'] ?? 'legacy';
+            $settings['music_endpoint'] = $music['endpoint'] ?? 'http://shybot.top/v2/music/api/';
+            $settings['has_music_key'] = !empty($music['key']);
             return json(['code' => 0, 'data' => $settings, 'has_password' => $hasPassword, 'has_auth_key' => $hasAuthKey, 'csrf' => $csrf])->header(['Cache-Control' => 'no-store, private']);
         } catch (\Throwable $e) {
             return json(['code' => -1, 'msg' => $e->getMessage()]);

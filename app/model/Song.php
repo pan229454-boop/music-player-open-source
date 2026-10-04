@@ -7,6 +7,12 @@ class Song extends Base
 {
 	
     public static function findMusicInfo($data){
+        try {
+            if (\PHPMailer\ShyMusic::enabled()) return \PHPMailer\ShyMusic::info($data['type'] ?? '', $data['songid'] ?? '');
+        } catch (\Exception $e) {
+            return ['code' => -1, 'msg' => $e->getMessage()];
+        }
+
 		$json = send_get(Config::get('api.music').'?input='.$data['songid'].'&filter=id&type='.$data['type'].'&page=1&url='. $_SERVER['SERVER_NAME']);
 		$data=json_decode($json,true);
         if($data==''){

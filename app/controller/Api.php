@@ -62,6 +62,11 @@ namespace app\controller {
             }
             $responseData = [];
             if (!$skipCheck) {
+            try {
+                if (\PHPMailer\ShyMusic::enabled()) return redirect(\PHPMailer\ShyMusic::audio($data['type'], $data['songId']));
+            } catch (\Exception $e) {
+                return response('音乐接口不可用，请联系站点管理员检查配置', 502);
+            }
             $queryParams = http_build_query(['qq' => \think\facade\Config::get('api.qq'), 'skey' => \think\facade\Config::get('api.skey'), 'demo' => $_SERVER['HTTP_HOST']]);
             $response = file_get_contents('https://auth.cenguigui.cn/MusicApi.php?' . $queryParams);
             if ($response === false) {
@@ -117,6 +122,18 @@ namespace app\controller {
         }
         public function musicLyric() {
             $data = input('get.');
+            if (($data['type'] ?? '') !== 'local') {
+                try {
+                    if (\PHPMailer\ShyMusic::enabled()) {
+                        $callback = $data['jsoncallback'] ?? '';
+                        if (!is_string($callback) || !preg_match('/^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$/D', $callback)) return response('Invalid callback', 400);
+                        $result = ['file' => 'null', 'time' => date('Y-m-d H:i:s'), 'type' => 'lrc', 'txt' => \PHPMailer\ShyMusic::lyric($data['type'] ?? '', $data['songId'] ?? '')];
+                        return response($callback . '(' . json_encode($result, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ')')->contentType('application/javascript');
+                    }
+                } catch (\Exception $e) {
+                    return response('音乐歌词接口不可用，请联系站点管理员检查配置', 502);
+                }
+            }
             $cache = \think\facade\Cache::get('musicLyric' . $data['type'] . $data['id']);
             if ($data['type'] == 'local') {
                 $id = $data['id'];
