@@ -86,7 +86,9 @@ class Admin extends Common
                     $settings = \PHPMailer\ServerAuthSettings::read();
                     $settings['skip_check'] = $value === '1';
                     \PHPMailer\ServerAuthSettings::save($settings);
-                    return json(['code' => 0, 'msg' => $settings['skip_check'] ? '已跳过本站前置授权检查，不代表获得上游服务授权' : '已恢复本站前置授权检查']);
+                    $saved = \PHPMailer\ServerAuthSettings::read();
+                    if (($saved['skip_check'] ?? false) !== $settings['skip_check']) throw new \RuntimeException('授权开关写入校验失败');
+                    return json(['code' => 0, 'skip_check' => $saved['skip_check'], 'msg' => $settings['skip_check'] ? '已跳过本站前置授权检查，不代表获得上游服务授权' : '已恢复本站前置授权检查']);
                 }
                 if ($action === 'server_auth') {
                     $qq = $data['auth_qq'] ?? '';

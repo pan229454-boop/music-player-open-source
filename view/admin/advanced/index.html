@@ -48,8 +48,8 @@
 <blockquote class="layui-elem-quote">用于音乐解析接口的服务器授权，与播放器域名授权不同。保存配置不代表已取得外部服务授权。请通过 HTTPS 填写密钥。</blockquote>
 <form class="layui-form" lay-filter="server-auth-switch-form">
 <input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="server_auth_switch">
-<div class="layui-form-item"><label class="layui-form-label">跳过前置检查</label><div class="layui-input-block"><input type="checkbox" name="skip_check" value="1" lay-skin="switch" lay-text="开启|关闭"><p>默认关闭。开启仅跳过本站的前置授权请求，不绕过上游解析接口的权限。QQ和密钥配置保持不变。</p></div></div>
-<div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn mail-template-button" disabled lay-submit lay-filter="server-auth-switch-save">保存授权开关</button></div></div>
+<div class="layui-form-item"><label class="layui-form-label">跳过前置检查</label><div class="layui-input-block"><input type="checkbox" name="skip_check" value="1" lay-filter="server-auth-toggle" lay-skin="switch" lay-text="开启|关闭"><p>默认关闭。开启仅跳过本站的前置授权请求，不绕过上游解析接口的权限。QQ和密钥配置保持不变。</p></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn mail-template-button" disabled lay-submit lay-filter="server-auth-switch-save">保存授权开关</button><p id="server-auth-switch-status">正在读取开关状态…</p></div></div>
 </form>
 <form class="layui-form" lay-filter="server-auth-form" autocomplete="off">
 <input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="server_auth">
@@ -73,20 +73,28 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
         var templateFields = {};
         ['template_title','template_body','homepage'].forEach(function(key) { if (res.data && res.data[key] != null) templateFields[key] = res.data[key]; });
         form.val('mail-template-form', templateFields);
-        form.val('server-auth-switch-form', {skip_check: res.data && res.data.skip_check === true});
+        setAuthSwitch(res.data && res.data.skip_check === true);
         form.val('server-auth-form', {auth_qq: (res.data && res.data.auth_qq) || ''});
         $('#server-auth-status').text(res.has_auth_key ? '授权密钥已保存，不会回显；更换QQ需重新填写密钥。' : '尚未保存授权配置，当前沿用代码原有配置。');
         $('.mail-template-button').prop('disabled', false);
         $('#advanced-mail-status').text(res.has_password ? '授权码已保存，不会回显；留空保留原值。' : '尚未保存邮件配置，请填写授权码。');
         $('#advanced-mail-save').prop('disabled', false);
     }).fail(function() { layer.msg('读取邮件配置失败，请刷新重试'); });
+    function setAuthSwitch(enabled) {
+        $('[lay-filter="server-auth-switch-form"] input[name="skip_check"]').prop('checked', enabled);
+        form.render('checkbox', 'server-auth-switch-form');
+        $('#server-auth-switch-status').text('服务器已保存状态：' + (enabled ? '开启（跳过前置检查）' : '关闭（执行前置检查）'));
+    }
+    form.on('switch(server-auth-toggle)', function() {
+        $('#server-auth-switch-status').text('状态已修改，尚未保存。请点击“保存授权开关”。');
+    });
     function mailAction(data) {
-        if (data.field.action === 'server_auth_switch') data.field.skip_check = data.field.skip_check === '1' ? '1' : '0';
+        if (data.field.action === 'server_auth_switch') data.field.skip_check = $(data.elem).closest('form').find('input[name="skip_check"]').prop('checked') ? '1' : '0';
         var button = $(data.elem);
         if (button.prop('disabled')) return false;
         button.prop('disabled', true);
         $.ajax({url: '/Admin/advanced', type: 'POST', data: data.field, dataType: 'json', timeout: 60000})
-          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
+          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'server_auth_switch') { setAuthSwitch(res.skip_check === true); } if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
           .fail(function() { layer.msg('请求失败或超时，请检查登录状态及服务器；不要立即重复发送'); })
           .always(function() { button.prop('disabled', false); });
         return false;
