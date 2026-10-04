@@ -219,10 +219,7 @@ private function getFilesize($size)
 					'jump'	=>	'/serverstate',
 					'title'	=>	'服务器管理'
 				],
-				[
-					'jump'	=>	'/advanced',
-					'title'	=>	'<i class=\"layui-icon layui-icon-set\"></i> 高级设置'
-				]
+
 			];
 		}elseif($userInfo['power']==1){
 			$userInfo['lv']='付费版';
