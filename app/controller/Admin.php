@@ -65,19 +65,13 @@ class Admin extends Common
     }
 
     public function userinfo()
-    {
-    public function advanced()
-    {
-        $this->checkLogin();
-.	$this->checkPower();
-        return View::fetch('admin/advanced/index');
-    }
     public function advanced()
     {
         $this->checkLogin();
 		$this->checkPower();
         return View::fetch('admin/advanced/index');
     }
+    {
 		$this->checkLogin();
 		$userInfo = Users::getLoginUser();
 		$sheets=SongSheet::where('user_id',$userInfo['uid'])->count();
