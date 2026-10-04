@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.44, for Linux (x86_64)
 --
--- Host: localhost    Database: music_ovoeo_cn
+-- Host: localhost    Database: music_player
 -- ------------------------------------------------------
 -- Server version	5.7.44-log
 --
@@ -9,6 +9,10 @@
 -- 用户名: admin
 -- 密码: 123456
 -- =====================================================
+
+-- 创建数据库（如果不存在）
+CREATE DATABASE IF NOT EXISTS `music_player` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `music_player`;
 
 DROP TABLE IF EXISTS `gui_chat`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
