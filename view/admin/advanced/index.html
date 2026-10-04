@@ -46,6 +46,11 @@
 <div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn layui-btn-normal mail-template-button" disabled lay-submit lay-filter="mail-test-send">发送测试邮件</button><p>使用已保存的 SMTP 和模板；修改后请先保存。测试验证码为123456，不可用于注册或找回密码。</p></div></div>
 </form></div><div class="layui-tab-item">
 <blockquote class="layui-elem-quote">用于音乐解析接口的服务器授权，与播放器域名授权不同。保存配置不代表已取得外部服务授权。请通过 HTTPS 填写密钥。</blockquote>
+<form class="layui-form" lay-filter="server-auth-switch-form">
+<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="server_auth_switch">
+<div class="layui-form-item"><label class="layui-form-label">跳过前置检查</label><div class="layui-input-block"><input type="checkbox" name="skip_check" value="1" lay-skin="switch" lay-text="开启|关闭"><p>默认关闭。开启仅跳过本站的前置授权请求，不绕过上游解析接口的权限。QQ和密钥配置保持不变。</p></div></div>
+<div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn mail-template-button" disabled lay-submit lay-filter="server-auth-switch-save">保存授权开关</button></div></div>
+</form>
 <form class="layui-form" lay-filter="server-auth-form" autocomplete="off">
 <input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="server_auth">
 <div class="layui-form-item"><label class="layui-form-label">授权QQ</label><div class="layui-input-block"><input class="layui-input" name="auth_qq" type="text" inputmode="numeric" placeholder="外部服务授权的QQ" lay-verify="required"></div></div>
@@ -61,13 +66,14 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
     $.ajax({url: '/Admin/mailSettingsData', type: 'GET', dataType: 'json', cache: false}).done(function(res) {
         if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
         if (typeof res.csrf !== 'string' || !/^[a-f0-9]{64}$/.test(res.csrf)) { layer.msg('安全令牌读取失败，请重新登录后重试'); return; }
-        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"]').find('input[name="csrf"]').val(res.csrf);
+        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"], [lay-filter="server-auth-switch-form"]').find('input[name="csrf"]').val(res.csrf);
         var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
         allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
         form.val('advanced-mail-form', fields);
         var templateFields = {};
         ['template_title','template_body','homepage'].forEach(function(key) { if (res.data && res.data[key] != null) templateFields[key] = res.data[key]; });
         form.val('mail-template-form', templateFields);
+        form.val('server-auth-switch-form', {skip_check: res.data && res.data.skip_check === true});
         form.val('server-auth-form', {auth_qq: (res.data && res.data.auth_qq) || ''});
         $('#server-auth-status').text(res.has_auth_key ? '授权密钥已保存，不会回显；更换QQ需重新填写密钥。' : '尚未保存授权配置，当前沿用代码原有配置。');
         $('.mail-template-button').prop('disabled', false);
@@ -75,6 +81,7 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
         $('#advanced-mail-save').prop('disabled', false);
     }).fail(function() { layer.msg('读取邮件配置失败，请刷新重试'); });
     function mailAction(data) {
+        if (data.field.action === 'server_auth_switch') data.field.skip_check = data.field.skip_check === '1' ? '1' : '0';
         var button = $(data.elem);
         if (button.prop('disabled')) return false;
         button.prop('disabled', true);
@@ -84,6 +91,7 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
           .always(function() { button.prop('disabled', false); });
         return false;
     }
+    form.on('submit(server-auth-switch-save)', mailAction);
     form.on('submit(server-auth-save)', mailAction);
     form.on('submit(mail-template-save)', mailAction);
     form.on('submit(mail-test-send)', mailAction);

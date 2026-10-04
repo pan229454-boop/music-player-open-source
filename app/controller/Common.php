@@ -29,7 +29,7 @@ class Common extends BaseController
         // Saved credentials override legacy defaults; malformed files fail closed.
         try {
             $auth = \PHPMailer\ServerAuthSettings::read();
-            if ($auth) {
+            if (isset($auth['qq'], $auth['skey'])) {
                 $data['qq'] = $auth['qq'];
                 $data['skey'] = $auth['skey'];
             }

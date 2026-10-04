@@ -53,15 +53,25 @@ namespace app\controller {
             if (!(isset($data['sign']) && isset($data['songId']) && isset($data['type']) && isset($data['id']))) {
                 return abort(400, 'Invalid sign');
             }
+            $skipCheck = false;
+            try {
+                $authSettings = \PHPMailer\ServerAuthSettings::read();
+                $skipCheck = ($authSettings['skip_check'] ?? false) === true;
+            } catch (\Throwable $e) {
+                return abort(503, '服务器授权配置无法读取');
+            }
+            $responseData = [];
+            if (!$skipCheck) {
             $queryParams = http_build_query(['qq' => \think\facade\Config::get('api.qq'), 'skey' => \think\facade\Config::get('api.skey'), 'demo' => $_SERVER['HTTP_HOST']]);
             $response = file_get_contents('https://auth.cenguigui.cn/MusicApi.php?' . $queryParams);
             if ($response === false) {
                 die('请求失败，请稍后再试。');
             }
             $responseData = json_decode($response, true);
-            if ($responseData['status'] == 'error' && $responseData['message'] == '域名未授权') {
+            }
+            if (!$skipCheck && ($responseData['status'] ?? null) == 'error' && ($responseData['message'] ?? null) == '域名未授权') {
                 $url = 'https://cdn.cenguigui.cn/Api/tts/2024-12-14-185658_111237.mp3';
-            } elseif ($responseData['status'] == 'error' && $responseData['message'] == 'skey有误') {
+            } elseif (!$skipCheck && ($responseData['status'] ?? null) == 'error' && ($responseData['message'] ?? null) == 'skey有误') {
                 $url = 'https://cdn.cenguigui.cn/Api/tts/2024-12-14-190011_184063.mp3';
             } else {
                 $type = $data['type'];

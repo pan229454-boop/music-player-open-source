@@ -80,6 +80,14 @@ class Admin extends Common
             try {
                 $action = $data['action'] ?? 'smtp';
                 if (!is_string($action)) throw new \InvalidArgumentException('请求格式不正确');
+                if ($action === 'server_auth_switch') {
+                    $value = $data['skip_check'] ?? '0';
+                    if (!is_string($value) || !in_array($value, ['0', '1'], true)) throw new \InvalidArgumentException('授权开关值不正确');
+                    $settings = \PHPMailer\ServerAuthSettings::read();
+                    $settings['skip_check'] = $value === '1';
+                    \PHPMailer\ServerAuthSettings::save($settings);
+                    return json(['code' => 0, 'msg' => $settings['skip_check'] ? '已跳过本站前置授权检查，不代表获得上游服务授权' : '已恢复本站前置授权检查']);
+                }
                 if ($action === 'server_auth') {
                     $qq = $data['auth_qq'] ?? '';
                     $key = $data['auth_skey'] ?? '';
@@ -91,7 +99,7 @@ class Admin extends Common
                         $key = $settings['skey'] ?? '';
                     }
                     if ($key === '') throw new \InvalidArgumentException('首次配置请填写授权密钥');
-                    \PHPMailer\ServerAuthSettings::save(['qq' => $qq, 'skey' => $key]);
+                    \PHPMailer\ServerAuthSettings::save(array_merge($settings, ['qq' => $qq, 'skey' => $key]));
                     return json(['code' => 0, 'msg' => '服务器授权配置已保存，尚未验证外部授权是否有效']);
                 }
                 if ($action === 'template') {
@@ -173,6 +181,7 @@ class Admin extends Common
             \think\facade\Session::save();
             $auth = \PHPMailer\ServerAuthSettings::read();
             $settings['auth_qq'] = $auth['qq'] ?? '';
+            $settings['skip_check'] = ($auth['skip_check'] ?? false) === true;
             $hasAuthKey = !empty($auth['skey']);
             $hasPassword = !empty($settings['password']);
             unset($settings['password']);

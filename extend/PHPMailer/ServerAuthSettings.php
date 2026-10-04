@@ -15,7 +15,10 @@ class ServerAuthSettings
         $raw = file_get_contents($path);
         $data = $raw === false ? null : json_decode($raw, true);
         if (!is_array($data)) throw new \RuntimeException('服务器授权配置文件无法读取，请检查服务器文件权限或备份');
-        if (!isset($data['qq'], $data['skey']) || !is_string($data['qq']) || !preg_match('/^[1-9][0-9]{4,19}$/D', $data['qq']) || !is_string($data['skey']) || $data['skey'] === '' || strlen($data['skey']) > 512 || preg_match('/[\x00-\x20\x7f]/', $data['skey'])) throw new \RuntimeException('服务器授权配置格式不正确');
+        if (isset($data['skip_check']) && !is_bool($data['skip_check'])) throw new \RuntimeException('授权开关格式不正确');
+        if (isset($data['qq']) || isset($data['skey'])) {
+            if (!isset($data['qq'], $data['skey']) || !is_string($data['qq']) || !preg_match('/^[1-9][0-9]{4,19}$/D', $data['qq']) || !is_string($data['skey']) || $data['skey'] === '' || strlen($data['skey']) > 512 || preg_match('/[\x00-\x20\x7f]/', $data['skey'])) throw new \RuntimeException('服务器授权配置格式不正确');
+        }
         return $data;
     }
 
