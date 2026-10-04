@@ -1045,18 +1045,18 @@ public function clearCache()
 
     $os_name = PHP_OS;
     if (strpos($os_name, "Linux") !== false) {
-       // $count = $this->getLinuxCount();
+       $count = $this->getLinuxCount();
         $result = [
             'code' => 0,
             'data' => [
-             /*   'mem' => $count['mem'],
+                'mem' => $count['mem'],
                 'memRealUsed' => $count['memRealUsed'],
                 'memTotal' => $count['memTotal'],
                 'mems' => 'layui-progress-bar layui-bg-red',
                 'cpu' => $count['cpu'],
                 'cpus' => 'layui-progress-bar',
                 'load' => $count['load_avg'],
-                'loads' => 'layui-progress-bar',*/
+                'loads' => 'layui-progress-bar',
                 'play' => whits($play),
                 'todayplay' => whits($Todayplay),
                 'meplay' => whits($meplay),
