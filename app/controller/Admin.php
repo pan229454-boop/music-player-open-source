@@ -364,12 +364,16 @@ class Admin extends Common
 		}
     }
 	
-	public function system()
+	public function system($act = 'about')
     {
-		$this->checkLogin();
-		return View::fetch('theme');
+        $this->checkLogin();
+        // Theme settings have a separate template; keep version information unchanged.
+        if ($act === 'theme') {
+            return View::fetch('system/theme');
+        }
+        return View::fetch('admin/theme');
     }
-	
+    
 	private ?Users $userInfo = null;
     public function checkLogin()
     {
