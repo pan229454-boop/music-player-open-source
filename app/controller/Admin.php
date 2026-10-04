@@ -14,7 +14,15 @@ class Admin extends Common
     public function advanced()
     {
         $this->checkLogin();
-        $this->checkPower();
+        $userInfo = Users::getLoginUser();
+        
+        // 检查是否是管理员（power==0）
+        if($userInfo['power'] != 0) {
+            View::assign('alert', '您没有权限访问此页面');
+            View::assign('url', '/');
+            return View::fetch('common/error');
+        }
+        
         return View::fetch('admin/advanced/index');
     }
     
@@ -24,7 +32,12 @@ class Admin extends Common
     public function createUser()
     {
         $this->checkLogin();
-        $this->checkPower();
+        $userInfo = Users::getLoginUser();
+        
+        // 检查是否是管理员
+        if($userInfo['power'] != 0) {
+            return json(['status' => 'error', 'message' => '权限不足']);
+        }
         
         $data = Request::param();
         
