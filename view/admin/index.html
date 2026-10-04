@@ -302,10 +302,34 @@ layui.use(['console', 'carousel', 'table'], function(){
     }
   }
 
+  function monitorPercent(value) {
+    if (typeof value !== 'number' && typeof value !== 'string') return null;
+    var text = String(value).trim();
+    if (!/^\d+(?:\.\d+)?%?$/.test(text)) return null;
+    var number = Number(text.replace(/%$/, ''));
+    return Number.isFinite(number) ? Math.min(100, Math.max(0, number)) + '%' : null;
+  }
+
+  function updateMonitorBar(id, value) {
+    var percent = monitorPercent(value);
+    var bar = $('#' + id);
+    // Never pass N/A% into Layui's expression evaluator.
+    bar.attr('lay-percent', percent || '0%').css('width', percent || '0%');
+    var label = bar.find('.layui-progress-text');
+    if (!label.length) label = $('<span class="layui-progress-text"></span>').appendTo(bar);
+    label.text(percent === null ? '暂无数据' : percent);
+    bar.attr('title', percent === null ? '监控数据暂不可用' : percent);
+  }
+
   function updateData(data) {
-      layui.element.progress('mem', data.data.mem);
-      layui.element.progress('cpu', data.data.cpu);
-      layui.element.progress('load', data.data.load);
+      if (!data || !data.data || (data.code != null && Number(data.code) !== 0)) {
+          ['mem', 'cpu', 'load'].forEach(function(id) { updateMonitorBar(id, null); });
+          console.warn('监控接口未返回有效数据');
+          return;
+      }
+      updateMonitorBar('mem', data.data.mem);
+      updateMonitorBar('cpu', data.data.cpu);
+      updateMonitorBar('load', data.data.load);
       $('#cpu').attr("class",data.data.cpus);
       $('#load').attr("class",data.data.loads);
       $('#mem').attr("class",data.data.mems);
