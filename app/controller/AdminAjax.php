@@ -215,10 +215,9 @@ private function getFilesize($size)
 					'jump'	=>	'/orders/act/list',
 					'title'	=>	'订单列表'
 				]
-				// ,[
-				// 	'jump'	=>	'/serverstate',
-				// 	'title'	=>	'服务器管理'
-				// ]
+					'jump'	=>	'/serverstate',
+					'title'	=>	'服务器管理'
+				]
 			];
 		}elseif($userInfo['power']==1){
 			$userInfo['lv']='付费版';
