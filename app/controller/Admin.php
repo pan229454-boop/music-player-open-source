@@ -80,6 +80,18 @@ class Admin extends Common
             try {
                 $action = $data['action'] ?? 'smtp';
                 if (!is_string($action)) throw new \InvalidArgumentException('请求格式不正确');
+                if ($action === 'music_source_probe') {
+                    $endpoint = trim((string)($data['source_endpoint'] ?? ''));
+                    $key = (string)($data['source_key'] ?? '');
+                    if ($endpoint === '' || strlen($endpoint)>2048 || !filter_var($endpoint,FILTER_VALIDATE_URL)) throw new \InvalidArgumentException('接口地址不正确');
+                    $types = ['wyy'=>'网易云音乐','qq'=>'QQ音乐','kugou'=>'酷狗音乐','kuwo'=>'酷我音乐','ximalaya'=>'喜马拉雅','migu'=>'咪咕音乐','qishui'=>'汽水音乐']; $found=[];
+                    foreach ($types as $type=>$label) {
+                        $url=$endpoint.(strpos($endpoint,'?')===false?'?':'&').http_build_query(['shykey'=>$key,'type'=>$type,'name'=>'周杰伦','page'=>1,'limit'=>1]);
+                        $ch=curl_init($url); curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>10,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2]); $body=curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
+                        $json=is_string($body)?json_decode($body,true):null; $ok=$code>=200&&$code<300&&is_array($json)&&isset($json[0])&&is_array($json[0])&&isset($json[0]['id'],$json[0]['name']); if($ok)$found[]=['id'=>$type,'name'=>$label];
+                    }
+                    return json(['code'=>0,'msg'=>'探测完成，请确认后保存','platforms'=>$found]);
+                }
                 if ($action === 'music_source_save' || $action === 'music_source_toggle') {
                     $enabled = $data['source_enabled'] ?? '';
                     if (!is_string($enabled) || !in_array($enabled, ['0', '1'], true)) throw new \InvalidArgumentException('接口状态不正确');
