@@ -54,7 +54,7 @@ class MusicSourceRegistry
         foreach(self::read() as $s) {
             if($enabledOnly && !$s['enabled']) continue;
             $s['has_key']=$s['key']!==''; unset($s['key']);
-            $s['platforms']=is_array($s['platforms'] ?? null) && count($s['platforms']) ? array_values($s['platforms']) : ($s['provider']==='shymusic' ? ['netease'] : ['netease','qq','kugou','qishui']);
+            $s['platforms']=is_array($s['platforms'] ?? null) && count($s['platforms']) ? array_values(array_unique(array_merge(['netease'],$s['platforms']))) : ($s['provider']==='shymusic' ? ['netease'] : ['netease','qq','kugou','qishui']);
             $out[]=$s;
         }
         return $out;

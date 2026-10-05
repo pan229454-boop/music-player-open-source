@@ -370,7 +370,7 @@
             var platformSelect = $('#soutype');
             var previous = platformSelect.val();
             var supported = musicSourcePlatforms[$('#music-source-select').val()] || [];
-            var labels = {netease:'网易音乐', qq:'QQ音乐', kugou:'酷狗音乐', qishui:'汽水音乐'};
+            var labels = {netease:'网易云音乐', qq:'QQ音乐', kugou:'酷狗音乐', qishui:'汽水音乐'};
             platformSelect.empty();
             supported.forEach(function(platform) {
                 if (labels[platform]) $('<option>').val(platform).text(labels[platform]).appendTo(platformSelect);

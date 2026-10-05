@@ -19,7 +19,7 @@ class MusicSourceService
             if(!is_string($name)||trim($name)===''||strlen($name)>300) throw new \InvalidArgumentException('搜索关键词不正确');
             $p+=['name'=>trim($name),'page'=>1,'limit'=>50];
         }
-        if($operation==='wyy_url') $p['down']=1;
+        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)) $p['down']=1;
         $body='';$location='';
         $endpoint=MusicSourceRegistry::validateEndpoint($this->source['endpoint']);
         $ips=MusicSourceRegistry::publicAddresses($endpoint['host']);
@@ -32,11 +32,11 @@ class MusicSourceService
             CURLOPT_WRITEFUNCTION=>function($ch,$chunk)use(&$body){if(strlen($body)+strlen($chunk)>2097152)return 0;$body.=$chunk;return strlen($chunk);}]);
         $ok=curl_exec($ch);$status=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
         if($ok===false)throw new \RuntimeException('音乐API连接失败或响应过大');
-        if($operation==='wyy_url'&&in_array($status,[301,302,303,307,308],true)&&$location!=='')return $this->audioUrl($location);
+        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)&&in_array($status,[301,302,303,307,308],true)&&$location!=='')return $this->audioUrl($location);
         if($status<200||$status>=300)throw new \RuntimeException('音乐API请求失败');
         $data=json_decode($body,true);
-        if(is_array($data)&&isset($data['code'])&&!in_array($data['code'],[0,200,'0','200'],true))throw new \RuntimeException('接口拒绝请求，请检查套餐权限');
-        if($operation==='wyy_url')return $this->audioUrl(is_array($data)?($data['url']??($data['data']['url']??'')):trim($body));
+        if(is_array($data)&&isset($data['code'])&&!in_array($data['code'],[0,1,200,'0','1','200'],true)&&!isset($data['url'])&&!isset($data['data']['url']))throw new \RuntimeException('音乐接口返回错误');
+        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true))return $this->audioUrl(is_array($data)?($data['url']??($data['data']['url']??'')):trim($body));
         if(!is_array($data))throw new \RuntimeException('音乐API响应格式不正确');
         return $data;
     }
@@ -45,7 +45,7 @@ class MusicSourceService
     {
         if(!is_string($url)||strlen($url)>8192||preg_match('/[\x00-\x20\x7f]/',$url)||!filter_var($url,FILTER_VALIDATE_URL))throw new \RuntimeException('播放地址无效');
         $p=parse_url($url);
-        if(!in_array($p['scheme']??'',['http','https'],true)||!preg_match('/(^|\.)music\.126\.net$/iD',$p['host']??'')||isset($p['user'])||isset($p['pass'])||strpos($url,$this->source['key'])!==false||stripos($url,'shykey=')!==false)throw new \RuntimeException('不支持的播放地址');
+        if(!in_array($p['scheme']??'',['http','https'],true)||isset($p['user'])||isset($p['pass'])||strpos($url,$this->source['key'])!==false||stripos($url,'shykey=')!==false)throw new \RuntimeException('不支持的播放地址');
         return $url;
     }
     public function search($type,$name)
@@ -56,7 +56,7 @@ class MusicSourceService
         foreach($rows as $r){ if(!is_array($r))continue; $id=$r['id']??($r['mid']??($r['hash']??null)); $title=$r['name']??($r['songname']??($r['song_name']??'')); if($id===null||$title==='')continue; $out[]=['song_name'=>(string)$title,'artist_name'=>(string)($r['singer']??($r['artist']??'')),'type'=>$type,'id'=>(string)$id,'music_source'=>$this->source['id']]; }
         return $out;
     }
-    public function audio($type,$id){$this->platform($type);return $this->request('wyy_url',$id);}
+    public function audio($type,$id){$this->platform($type);$ops=['netease'=>'wyy_url','qq'=>'qq_url','kugou'=>'kg_url','qishui'=>'qishui_url'];return $this->request($ops[$type],$id);}
     public function lyric($type,$id){$this->platform($type);$d=$this->request('wyy_lrc',$id);if(!is_string($d['lyric']??null))throw new \RuntimeException('歌词格式不正确');return $d['lyric'];}
     public function info($type,$id)
     {
