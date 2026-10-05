@@ -88,7 +88,7 @@ class Admin extends Common
                     foreach ($types as $type=>$label) {
                         $url=$endpoint.(strpos($endpoint,'?')===false?'?':'&').http_build_query(['shykey'=>$key,'type'=>$type,'name'=>'周杰伦','page'=>1,'limit'=>1]);
                         $ch=curl_init($url); curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>10,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2]); $body=curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
-                        $json=is_string($body)?json_decode($body,true):null; $ok=$code>=200&&$code<300&&is_array($json)&&isset($json[0])&&is_array($json[0])&&isset($json[0]['id'],$json[0]['name']); if($ok)$found[]=['id'=>$type,'name'=>$label];
+                        $json=is_string($body)?json_decode($body,true):null; $rows=is_array($json)?($json['data']??$json['result']??$json):null; if(is_array($rows)&&isset($rows['list']))$rows=$rows['list']; $ok=$code>=200&&$code<300&&is_array($rows); if($ok){foreach($rows as $row){if(is_array($row)&&(isset($row['id'])||isset($row['mid'])||isset($row['hash']))&&(isset($row['name'])||isset($row['songname'])||isset($row['song_name']))){$found[]=['id'=>$type,'name'=>$label];break;}}}
                     }
                     return json(['code'=>0,'msg'=>'探测完成，请确认后保存','platforms'=>$found]);
                 }
