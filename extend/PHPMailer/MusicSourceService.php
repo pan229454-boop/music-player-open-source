@@ -36,7 +36,15 @@ class MusicSourceService
         if($status<200||$status>=300)throw new \RuntimeException('音乐API请求失败');
         $data=json_decode($body,true);
         if(!in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)&&is_array($data)&&isset($data['code'])&&!in_array($data['code'],[0,1,200,'0','1','200'],true)&&!isset($data['url'])&&!isset($data['data']['url']))throw new \RuntimeException('音乐接口返回错误');
-        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)){ $u=is_array($data)?($data['url']??($data['data']['url']??($data['data'][0]['url']??($data['play_url']??($data['audio_url']??($data['mp3']??''))))):trim($body); return $this->audioUrl($u); }
+        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)){
+            $u='';
+            if(is_array($data)){
+                $u=$data['url']??'';
+                if($u==='' && isset($data['data']) && is_array($data['data'])) $u=$data['data']['url']??($data['data'][0]['url']??'');
+                if($u==='' ) $u=$data['play_url']??($data['audio_url']??($data['mp3']??''));
+            } else $u=trim($body);
+            return $this->audioUrl($u);
+        }
         if(!is_array($data))throw new \RuntimeException('音乐API响应格式不正确');
         return $data;
     }
