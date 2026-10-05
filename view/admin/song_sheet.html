@@ -12,7 +12,7 @@
                 <input type="hidden" id="songSheetId" value="{$entity.id}">
                 <ul id="musiclist" lay-templateid="musiclist">
                     {volist name="songs" id="song"}
-                    <li song_id="{$song.song_id}" name="{$song.name}" type="{$song.type}"
+                    <li music-source="{$song.music_source|default='legacy'}" song_id="{$song.song_id}" name="{$song.name}" type="{$song.type}"
                         album_name="{$song.album_name}" artist_name="{$song.artist_name}"
                         album_cover="{$song.album_cover}" location="{$song.location}" lyric="{$song.lyric}">
                         <span class="drag-handle">
@@ -23,7 +23,7 @@
                             <a class="layui-btn layui-btn-danger layui-btn-xs" onclick="delPlayerSongSheet(this)" href="javascript:" ss-name="{$song.name}">
                                 <i class="layui-icon layui-icon-delete"></i> 删除
                             </a>
-                            <a class='layui-btn layui-btn-primary layui-btn-xs button-custom' href='javascript:;' type='{$song.type}' name='{$song.song_id}' onclick='previewSong(this)'>
+                            <a class='layui-btn layui-btn-primary layui-btn-xs button-custom' href='javascript:;' type='{$song.type}' name='{$song.song_id}' music-source="{$song.music_source|default='legacy'}" onclick='previewSong(this)'>
             <i class='layui-icon layui-icon-play'></i> 试听
         </a>
                         </div>
@@ -139,9 +139,9 @@
                                         </div>
                                     </div>
                                     <div class="layui-form-item">
-                                        <label class="layui-form-label">搜索来源</label>
+                                        <label class="layui-form-label">音乐接口</label>
                                         <div class="layui-input-inline">
-                                            <select id="soutype" >
+                                            <select id="music-source-select" lay-filter="music-source-select"><option value="">正在读取接口…</option></select></div></div><div class="layui-form-item"><label class="layui-form-label">音乐平台</label><div class="layui-input-inline"><select id="soutype" >
                                                 <option value="netease">网易音乐</option>
                                                 <option value="kugou">酷狗音乐</option>
                                                 <option value="qq">QQ音乐</option>
@@ -339,6 +339,7 @@
 					pic = row.attr("album_cover");
 				}
                 jsonData[x] = {
+                    music_source: row.attr("music-source") || "legacy",
                     song_id: row.attr("song_id"),
                     name: row.attr("name"),
                     type: row.attr("type"),
@@ -364,18 +365,45 @@
             });
         });
 		
+        var musicSourcePlatforms = {};
+        function refreshMusicPlatforms() {
+            var platformSelect = $('#soutype');
+            var previous = platformSelect.val();
+            var supported = musicSourcePlatforms[$('#music-source-select').val()] || [];
+            var labels = {netease:'网易音乐', qq:'QQ音乐', kugou:'酷狗音乐'};
+            platformSelect.empty();
+            supported.forEach(function(platform) {
+                if (labels[platform]) $('<option>').val(platform).text(labels[platform]).appendTo(platformSelect);
+            });
+            if (supported.indexOf(previous) >= 0) platformSelect.val(previous);
+            layui.form.render('select');
+        }
+        layui.form.on('select(music-source-select)', refreshMusicPlatforms);
+        $.getJSON('/AdminAjax/Song/act/sources', function(res) {
+            var select = $('#music-source-select').empty();
+            if (!res || res.code !== 0) { layer.msg('音乐接口列表读取失败'); return; }
+            (res.sources || []).forEach(function(source) {
+                musicSourcePlatforms[source.id] = source.platforms || [];
+                $('<option>').val(source.id).text(source.name).appendTo(select);
+            });
+            refreshMusicPlatforms();
+        }).fail(function() { layer.msg('音乐接口列表读取失败'); });
 		$("[id=search]").click(function() {
 			var name = $("input[name='song_name']").val();
 			var type = $("#soutype").val();
+            var selectedSource = $("#music-source-select").val();
+            if (!selectedSource || !type) { layer.msg("没有可用音乐接口"); return false; }
 			 $.ajax({
 				url: '{:url("/AdminAjax/Song/act/search")}',
 				type: 'GET',
 				dataType: 'json',
 				data:{
-					"song_name":name,
+					"music_source":selectedSource,
+                    "song_name":name,
 					"type":type
 				},
 				success: function(data) {
+                if (data.code === -1) { layer.msg(data.msg || '搜索失败'); return; }
 				var html = '';
 
 					for (x in data['songs']) {
@@ -386,8 +414,8 @@
     html = html + "<td style='text-align: left;'><span class='first'>"+ data['songs'][x]["artist_name"]+"</span></td>";
 
     html = html + "<td style='text-align: right; vertical-align: middle;'>";
-    html = html + "<a class='layui-btn layui-btn-primary layui-btn-xs button-custom' href='javascript:;' type='"+ data['songs'][x]['type'] +"' name='"+ data['songs'][x]['id'] +"' onclick='getSearchAdd(this)' ><i class='layui-icon layui-icon-add-1'></i> 添加</a>";
-    html = html + "<a class='layui-btn layui-btn-primary layui-btn-xs button-custom' href='javascript:;' type='"+ data['songs'][x]['type'] +"' name='"+ data['songs'][x]['id'] +"' onclick='previewSong(this)' ><i class='layui-icon layui-icon-play'></i> 试听</a>";
+    html = html + "<a class='layui-btn layui-btn-primary layui-btn-xs button-custom' href='javascript:;' type='"+ data['songs'][x]['type'] +"' name='"+ data['songs'][x]['id'] +"' music-source='"+ selectedSource +"' onclick='getSearchAdd(this)' ><i class='layui-icon layui-icon-add-1'></i> 添加</a>";
+    html = html + "<a class='layui-btn layui-btn-primary layui-btn-xs button-custom' href='javascript:;' type='"+ data['songs'][x]['type'] +"' name='"+ data['songs'][x]['id'] +"' music-source='"+ selectedSource +"' onclick='previewSong(this)' ><i class='layui-icon layui-icon-play'></i> 试听</a>";
     html = html + "</td>";
 
     html = html + "</tr>";
@@ -413,7 +441,8 @@
 							pic = row.attr("album_cover");
 						}
 						jsonData[x] = {
-							song_id: row.attr("song_id"),
+							music_source: row.attr("music-source") || "legacy",
+                    song_id: row.attr("song_id"),
 							name: row.attr("name"),
 							type: row.attr("type"),
 							album_name: row.attr("album_name"),
@@ -443,28 +472,30 @@
 	
 	</script>
 	<script>
+    function musicHtml(value) { return $('<div>').text(value == null ? '' : String(value)).html().replace(/"/g, String.fromCharCode(38)+'quot;').replace(/'/g, String.fromCharCode(38)+'#39;'); }
 	function getSearchAdd(that) {
 		position = $(":radio[name='position3']:checked").val();
-		jsonData = {
-				songid: $(that).attr("name"),
+		var jsonData = {
+				music_source: $(that).attr("music-source") || "legacy",
+                songid: $(that).attr("name"),
 				type: $(that).attr("type"),
 			};
 		$.post("/AdminAjax/Song/act/info", jsonData, function (data) {
 			if (data.code === 0) {
-				layer.confirm('歌曲名称：' + data['song_name'] + '<br/>歌手：' + data['artist_name'] + ' <br/> 确认添加到歌单吗？', {
+				layer.confirm('歌曲名称：' + musicHtml(data['song_name']) + '<br/>歌手：' + musicHtml(data['artist_name']) + ' <br/> 确认添加到歌单吗？', {
 					icon: 3,
 					title: '确认'
 				}, function (index) {
-					var liHtml = '<li song_id="' + jsonData.songid +
-						'" name="' + data['song_name'] + '" type="' + jsonData.type +
-						'" album_name="' + data['album_name'] +
-						'" artist_name="' + data['artist_name'] +
-						'"album_cover="' + data['album_cover'] +
-						'" location="' + data['location'] +
-						'" lyric="' + data['lyric'] +
+					var liHtml = '<li music-source="' + jsonData.music_source + '" song_id="' + jsonData.songid +
+						'" name="' + musicHtml(data['song_name']) + '" type="' + jsonData.type +
+						'" album_name="' + musicHtml(data['album_name']) +
+						'" artist_name="' + musicHtml(data['artist_name']) +
+						'"album_cover="' + musicHtml(data['album_cover']) +
+						'" location="' + musicHtml(data['location']) +
+						'" lyric="' + musicHtml(data['lyric']) +
 						'"><span class="drag-handle"><img src="/static/images/type/' + jsonData.type +
-						'.png" width="16px" height="16px">  ' + data['song_name'] + ' <span class="layui-badge-rim">' + data['artist_name'] +
-						'</span></span><div style="float:right"><a class="layui-btn layui-btn-danger layui-btn-xs" onclick="delPlayerSongSheet(this)" href="javascript:" ss-name="' + data['song_name'] + '"><i class="layui-icon layui-icon-delete"></i>删除</a></div><input type="hidden" name="ids[]" value="' + jsonData.songid +'"></li>';
+						'.png" width="16px" height="16px">  ' + musicHtml(data['song_name']) + ' <span class="layui-badge-rim">' + musicHtml(data['artist_name']) +
+						'</span></span><div style="float:right"><a class="layui-btn layui-btn-danger layui-btn-xs" onclick="delPlayerSongSheet(this)" href="javascript:" ss-name="' + musicHtml(data['song_name']) + '"><i class="layui-icon layui-icon-delete"></i>删除</a></div><input type="hidden" name="ids[]" value="' + jsonData.songid +'"></li>';
 					position == 'top' ? $("#musiclist").prepend(liHtml) : $("#musiclist").append(liHtml);
 					layer.msg("已添加到歌单");
 					layer.close(index);
@@ -478,7 +509,8 @@
 function previewSong(that) {
     var position = $(":radio[name='position3']:checked").val();
     var jsonData = {
-        songid: $(that).attr("name"),
+        music_source: $(that).attr("music-source") || "legacy",
+                songid: $(that).attr("name"),
         type: $(that).attr("type")
     };
 

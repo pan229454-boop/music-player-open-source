@@ -28,7 +28,7 @@ namespace app\controller {
             \app\model\Player::where('id', '=', $id)->data($data)->update();
             $data2 = ['player_id' => $id, 'user_id' => $player['user_id'], 'side' => 'ios', 'create_time' => date('Y-m-d H:i:s')];
             \app\model\Plays::add($data2);
-            $cache = \think\facade\Cache::get('info' . $id);
+            $cache = \think\facade\Cache::get('info_sources_v1_' . $id);
             if ($cache) {
                 return response($act['jsoncallback'] . '(' . $cache . ')');
             }
@@ -39,19 +39,26 @@ namespace app\controller {
                 $songs = \app\model\Song::where('song_sheet_id', $item['id'])->order('taxis asc')->select();
                 $songlists = [];
                 foreach ($songs as $key2 => $item2) {
-                    $songlists[$key2] = ['type' => $item2['type'], 'id' => $item2['song_id'], 'name' => $item2['name'], 'cover' => $item2['album_cover'], 'artist' => $item2['artist_name'], 'album' => $item2['album_name'], 'url' => $item2['location'], 'lyric' => $item2['lyric']];
+                    $songlists[$key2] = ['music_source' => $item2['music_source'] ?? 'legacy', 'type' => $item2['type'], 'id' => $item2['song_id'], 'name' => $item2['name'], 'cover' => $item2['album_cover'], 'artist' => $item2['artist_name'], 'album' => $item2['album_name'], 'url' => $item2['location'], 'lyric' => $item2['lyric']];
                 }
                 $songSheetList[$key] = ['SheetName' => $item['name'], 'author' => $item['author'], 'songs' => $songlists];
             }
             $result = ['playerName' => $player['name'], 'showGreeting' => $player['show_greeting'], 'switchopen' => $player['switchopen'], 'time' => $player['time'], 'showLrc' => $player['show_lrc'], 'showMsg' => $player['showmsg'], 'defaultAlbum' => $player['default_album'], 'randomPlayer' => $player['random_player'], 'defaultVolume' => $player['default_volume'], 'greeting' => $player['greeting'], 'autoPlayer' => $player['auto_player'], 'Sheetlist' => $songSheetList, 'showNotes' => $player['show_notes']];
             $result = json_encode($result);
-            \think\facade\Cache::set('info' . $id, $result);
+            \think\facade\Cache::set('info_sources_v1_' . $id, $result);
             return response($act['jsoncallback'] . '(' . $result . ')');
         }
         public function musicUrl() {
             $data = input('get.');
             if (!(isset($data['sign']) && isset($data['songId']) && isset($data['type']) && isset($data['id']))) {
                 return abort(400, 'Invalid sign');
+            }
+            try {
+                $sourceId = $data['music_source'] ?? 'legacy';
+                $source = \PHPMailer\MusicSourceRegistry::get($sourceId);
+                if ($source['provider'] === 'shymusic') return redirect((new \PHPMailer\MusicSourceService($sourceId))->audio($data['type'], $data['songId']));
+            } catch (\Throwable $e) {
+                return response('音乐接口不可用，请联系站点管理员检查配置', 502);
             }
             $skipCheck = false;
             try {
@@ -78,7 +85,8 @@ namespace app\controller {
                 $id = $data['songId'];
                 $json = send_get(\think\facade\Config::get('api.music') . '?input=' . $id . '&filter=id&type=' . $type . '&page=1&url=' . $_SERVER['SERVER_NAME']);
                 $musicData = json_decode($json, true);
-                $url = $musicData['url'] ?? $url;
+                $url = $musicData['url'] ?? '';
+                if (!is_string($url) || !filter_var($url,FILTER_VALIDATE_URL) || !in_array(parse_url($url,PHP_URL_SCHEME),['http','https'],true)) return response('原接口未返回有效音频地址',502);
             }
             return redirect($url);
         }
@@ -117,6 +125,20 @@ namespace app\controller {
         }
         public function musicLyric() {
             $data = input('get.');
+            if (($data['type'] ?? '') !== 'local') {
+                try {
+                    $sourceId = $data['music_source'] ?? 'legacy';
+                    $source = \PHPMailer\MusicSourceRegistry::get($sourceId);
+                    if ($source['provider'] === 'shymusic') {
+                        $callback = $data['jsoncallback'] ?? '';
+                        if (!is_string($callback) || !preg_match('/^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$/D', $callback)) return response('Invalid callback', 400);
+                        $result = ['file' => 'null', 'time' => date('Y-m-d H:i:s'), 'type' => 'lrc', 'txt' => (new \PHPMailer\MusicSourceService($sourceId))->lyric($data['type'] ?? '', $data['songId'] ?? '')];
+                        return response($callback . '(' . json_encode($result, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ')')->contentType('application/javascript');
+                    }
+                } catch (\Throwable $e) {
+                    return response('音乐歌词接口不可用，请联系站点管理员检查配置', 502);
+                }
+            }
             $cache = \think\facade\Cache::get('musicLyric' . $data['type'] . $data['id']);
             if ($data['type'] == 'local') {
                 $id = $data['id'];
