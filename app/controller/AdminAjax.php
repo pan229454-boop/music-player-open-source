@@ -658,7 +658,8 @@ $open_head = [
                 try {
                     $query = input('get.');
                     $adapter = new \PHPMailer\MusicSourceService($query['music_source'] ?? 'legacy');
-                    return redirect($adapter->audio($query['type'] ?? '', $query['songid'] ?? ''));
+                    $type=$query['type'] ?? ''; $raw=$adapter->streamAudio($type,$query['songid'] ?? '');
+                    return response($raw['body'],200)->header('Content-Type',$raw['content_type'])->header('Accept-Ranges','bytes');
                 } catch (\Throwable $e) {
                     return response('试听接口不可用：'.($e->getMessage() ?: '接口返回错误'), 502);
                 }
