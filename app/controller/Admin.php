@@ -104,7 +104,8 @@ class Admin extends Common
                             'provider' => $data['source_provider'] ?? '',
                             'endpoint' => $data['source_endpoint'] ?? '',
                             'key' => $data['source_key'] ?? '',
-                            'enabled' => $enabled === '1'
+                            'enabled' => $enabled === '1',
+                            'platforms' => json_decode((string)($data['source_platforms'] ?? '[]'), true) ?: []
                         ]);
                     }
                     return json(['code' => 0, 'msg' => '接口配置已保存，尚未验证连接和套餐权限', 'sources' => \PHPMailer\MusicSourceRegistry::publicList()]);

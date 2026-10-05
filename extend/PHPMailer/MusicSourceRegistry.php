@@ -54,7 +54,7 @@ class MusicSourceRegistry
         foreach(self::read() as $s) {
             if($enabledOnly && !$s['enabled']) continue;
             $s['has_key']=$s['key']!==''; unset($s['key']);
-            $s['platforms']=$s['provider']==='shymusic' ? ['netease'] : ['netease','qq','kugou'];
+            $s['platforms']=is_array($s['platforms'] ?? null) && count($s['platforms']) ? array_values($s['platforms']) : ($s['provider']==='shymusic' ? ['netease'] : ['netease','qq','kugou','qishui']);
             $out[]=$s;
         }
         return $out;
@@ -78,7 +78,7 @@ class MusicSourceRegistry
         $key = $input['key'] ?? '';
         if (!is_string($key)) throw new \InvalidArgumentException('密钥格式不正确');
         if ($key === '') $key = $old['key'] ?? '';
-        $sources[$id] = ['id'=>$id, 'name'=>$input['name'] ?? '', 'provider'=>$id === 'legacy' ? 'legacy' : ($input['provider'] ?? ''), 'enabled'=>$input['enabled'] ?? null, 'endpoint'=>$id === 'legacy' ? '' : ($input['endpoint'] ?? ''), 'key'=>$id === 'legacy' ? '' : $key];
+        $sources[$id] = ['id'=>$id, 'name'=>$input['name'] ?? '', 'provider'=>$id === 'legacy' ? 'legacy' : ($input['provider'] ?? ''), 'enabled'=>$input['enabled'] ?? null, 'endpoint'=>$id === 'legacy' ? '' : ($input['endpoint'] ?? ''), 'key'=>$id === 'legacy' ? '' : $key, 'platforms'=>is_array($input['platforms'] ?? null) ? array_values($input['platforms']) : ($old['platforms'] ?? ['netease'])];
         self::save($sources);
         return $id;
     }

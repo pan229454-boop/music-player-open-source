@@ -61,7 +61,7 @@
 <table class="layui-table"><thead><tr><th>接口名称</th><th>协议</th><th>状态</th><th>操作</th></tr></thead><tbody id="music-source-list"></tbody></table>
 <button type="button" class="layui-btn" id="music-source-new">新增接口</button> <button type="button" class="layui-btn layui-btn-normal" id="music-source-probe">测试并自动识别</button>
 <form class="layui-form" lay-filter="music-api-form" autocomplete="off">
-<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="music_source_save"><input type="hidden" name="source_id">
+<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="music_source_save"><input type="hidden" name="source_id"><input type="hidden" name="source_platforms" value="[]">
 <div class="layui-form-item"><label class="layui-form-label">接口名称</label><div class="layui-input-block"><input name="source_name" class="layui-input" lay-verify="required"></div></div>
 <div class="layui-form-item"><label class="layui-form-label">适配协议</label><div class="layui-input-block"><select name="source_provider"><option value="shymusic">ShyMusic v2（网易云）</option><option value="legacy">原接口（仅内置项）</option></select></div></div>
 <div class="layui-form-item"><label class="layui-form-label">接口地址</label><div class="layui-input-block"><input class="layui-input" name="source_endpoint" placeholder="https://接口域名/v2/music/api/"></div></div>
@@ -111,7 +111,7 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
     }
     $('#music-source-probe').on('click', function() {
         var f=form.val('music-api-form'); if(!f.source_endpoint){layer.msg('请先填写接口地址');return;}
-        var b=$(this).prop('disabled',true); $.post('/Admin/advanced',{action:'music_source_probe',source_endpoint:f.source_endpoint,source_key:f.source_key||'',csrf:$('[lay-filter="music-api-form"] input[name="csrf"]').val()},function(res){ if(res.code!==0){layer.msg(res.msg||'探测失败');return;} var names=(res.platforms||[]).map(function(x){return x.name;}); layer.msg(res.msg+'：'+(names.join('、')||'未识别')); if(names.length) $('#music-api-status').text('探测到：'+names.join('、')+'；请确认后点击保存接口'); },'json').fail(function(){layer.msg('探测请求失败');}).always(function(){b.prop('disabled',false);});
+        var b=$(this).prop('disabled',true); $.post('/Admin/advanced',{action:'music_source_probe',source_endpoint:f.source_endpoint,source_key:f.source_key||'',csrf:$('[lay-filter="music-api-form"] input[name="csrf"]').val()},function(res){ if(res.code!==0){layer.msg(res.msg||'探测失败');return;} var names=(res.platforms||[]).map(function(x){return x.name;}); form.val('music-api-form',{source_platforms:JSON.stringify((res.platforms||[]).map(function(x){return x.id;}))}); layer.msg(res.msg+'：'+(names.join('、')||'未识别')); if(names.length) $('#music-api-status').text('探测到：'+names.join('、')+'；请确认后点击保存接口'); },'json').fail(function(){layer.msg('探测请求失败');}).always(function(){b.prop('disabled',false);});
     });
     $('#music-source-new').on('click', function() {
         form.val('music-api-form', {source_id:'',source_name:'',source_provider:'shymusic',source_endpoint:'http://shybot.top/v2/music/api/',source_key:'',source_enabled:'1'});
