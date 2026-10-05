@@ -660,7 +660,7 @@ $open_head = [
                     $adapter = new \PHPMailer\MusicSourceService($query['music_source'] ?? 'legacy');
                     return redirect($adapter->audio($query['type'] ?? '', $query['songid'] ?? ''));
                 } catch (\Throwable $e) {
-                    return response('试听接口不可用，请检查来源接口状态及套餐权限', 502);
+                    return response('试听接口不可用：'.($e->getMessage() ?: '接口返回错误'), 502);
                 }
             case 'sources':
                 try {
