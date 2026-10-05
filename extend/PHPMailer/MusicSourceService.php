@@ -12,8 +12,11 @@ class MusicSourceService
         if(!function_exists('curl_init')) throw new \RuntimeException('需启用PHP cURL扩展');
         $p=['type'=>$operation,'shykey'=>$this->source['key']];
         if($id!==null) {
-            if(!is_scalar($id)||!preg_match('/^[A-Za-z0-9_:.\-]{1,128}$/D',(string)$id)) throw new \InvalidArgumentException('歌曲ID不正确');
-            $p['id']=(string)$id;
+            if(!is_scalar($id)) throw new \InvalidArgumentException('歌曲标识不正确');
+            $raw=(string)$id;
+            if($operation==='qq_url') { $parts=explode('|',$raw); if(count($parts)<2) throw new \InvalidArgumentException('QQ歌曲参数不完整'); $p['mid']=$parts[0]; $p['media_mid']=$parts[1]; }
+            elseif($operation==='kg_url') { $parts=explode('|',$raw); if(count($parts)<3) throw new \InvalidArgumentException('酷狗歌曲参数不完整'); $p['hash']=$parts[0]; $p['album_id']=$parts[1]; $p['album_audio_id']=$parts[2]; }
+            else { if(!preg_match('/^[0-9]{1,24}$/D',$raw)) throw new \InvalidArgumentException('歌曲ID不正确'); $p['id']=$raw; }
         }
         if(in_array($operation,['wyy','qq','kugou','qishui'],true)) {
             if(!is_string($name)||trim($name)===''||strlen($name)>300) throw new \InvalidArgumentException('搜索关键词不正确');
@@ -61,7 +64,7 @@ class MusicSourceService
         $this->platform($type); $map=['netease'=>'wyy','qq'=>'qq','kugou'=>'kugou','qishui'=>'qishui'];
         $data=$this->request($map[$type],null,$name); $rows=$data['data']??($data['result']??$data); if(isset($rows['list']))$rows=$rows['list']; $out=[];
         if(!is_array($rows))return $out;
-        foreach($rows as $r){ if(!is_array($r))continue; $id=$r['id']??($r['mid']??($r['hash']??null)); $title=$r['name']??($r['songname']??($r['song_name']??'')); if($id===null||$title==='')continue; $out[]=['song_name'=>(string)$title,'artist_name'=>(string)($r['singer']??($r['artist']??'')),'type'=>$type,'id'=>(string)$id,'music_source'=>$this->source['id']]; }
+        foreach($rows as $r){ if(!is_array($r))continue; $id=$r['id']??($r['mid']??($r['hash']??null)); if($type==='qq' && isset($r['mid'],$r['media_mid'])) $id=$r['mid'].'|'.$r['media_mid']; if($type==='kugou' && isset($r['hash'],$r['album_id'],$r['album_audio_id'])) $id=$r['hash'].'|'.$r['album_id'].'|'.$r['album_audio_id']; $title=$r['name']??($r['songname']??($r['song_name']??'')); if($id===null||$title==='')continue; $out[]=['song_name'=>(string)$title,'artist_name'=>(string)($r['singer']??($r['artist']??'')),'type'=>$type,'id'=>(string)$id,'music_source'=>$this->source['id']]; }
         return $out;
     }
     public function audio($type,$id){$this->platform($type);$ops=['netease'=>'wyy_url','qq'=>'qq_url','kugou'=>'kg_url','qishui'=>'qishui_url'];return $this->request($ops[$type],$id);}
