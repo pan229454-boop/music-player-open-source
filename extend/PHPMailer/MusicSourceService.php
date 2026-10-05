@@ -15,7 +15,7 @@ class MusicSourceService
             if(!is_scalar($id)||!preg_match('/^[0-9]{1,24}$/D',(string)$id)) throw new \InvalidArgumentException('歌曲ID不正确');
             $p['id']=(string)$id;
         }
-        if($operation==='wyy') {
+        if(in_array($operation,['wyy','qq','kugou','qishui'],true)) {
             if(!is_string($name)||trim($name)===''||strlen($name)>300) throw new \InvalidArgumentException('搜索关键词不正确');
             $p+=['name'=>trim($name),'page'=>1,'limit'=>50];
         }
@@ -40,7 +40,7 @@ class MusicSourceService
         if(!is_array($data))throw new \RuntimeException('音乐API响应格式不正确');
         return $data;
     }
-    private function platform($type) { if($type!=='netease')throw new \InvalidArgumentException('此接口目前仅支持网易云'); }
+    private function platform($type) { if(!in_array($type,['netease','qq','kugou','qishui'],true)) throw new \InvalidArgumentException('此接口暂不支持该音乐平台'); }
     private function audioUrl($url)
     {
         if(!is_string($url)||strlen($url)>8192||preg_match('/[\x00-\x20\x7f]/',$url)||!filter_var($url,FILTER_VALIDATE_URL))throw new \RuntimeException('播放地址无效');
@@ -50,8 +50,10 @@ class MusicSourceService
     }
     public function search($type,$name)
     {
-        $this->platform($type);$data=$this->request('wyy',null,$name);$rows=$data['data']??$data;$out=[];
-        foreach($rows as $r)if(is_array($r)&&isset($r['id'],$r['name'])&&preg_match('/^[0-9]{1,24}$/D',(string)$r['id']))$out[]=['song_name'=>(string)$r['name'],'artist_name'=>is_string($r['singer']??null)?$r['singer']:'','type'=>'netease','id'=>(string)$r['id'],'music_source'=>$this->source['id']];
+        $this->platform($type); $map=['netease'=>'wyy','qq'=>'qq','kugou'=>'kugou','qishui'=>'qishui'];
+        $data=$this->request($map[$type],null,$name); $rows=$data['data']??($data['result']??$data); if(isset($rows['list']))$rows=$rows['list']; $out=[];
+        if(!is_array($rows))return $out;
+        foreach($rows as $r){ if(!is_array($r))continue; $id=$r['id']??($r['mid']??($r['hash']??null)); $title=$r['name']??($r['songname']??($r['song_name']??'')); if($id===null||$title==='')continue; $out[]=['song_name'=>(string)$title,'artist_name'=>(string)($r['singer']??($r['artist']??'')),'type'=>$type,'id'=>(string)$id,'music_source'=>$this->source['id']]; }
         return $out;
     }
     public function audio($type,$id){$this->platform($type);return $this->request('wyy_url',$id);}
