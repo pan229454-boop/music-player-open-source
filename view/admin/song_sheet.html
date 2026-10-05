@@ -516,7 +516,7 @@ function previewSong(that) {
 
     $.post("/AdminAjax/Song/act/info", jsonData, function(data) {
         if (data.code === 0) {
-            var musicUrl = '/AdminAjax/Song/act/preview?music_source=' + encodeURIComponent(jsonData.music_source) + '&type=' + encodeURIComponent(jsonData.type) + '&songid=' + encodeURIComponent(jsonData.songid);
+            var musicUrl = data.music_url; // 从接口中获取音乐地址
             var albumCover = data.album_cover; // 专辑封面
             var songName = data.song_name; // 歌曲名称
             var artistName = data.artist_name; // 歌手名称
@@ -584,15 +584,7 @@ function previewSong(that) {
         var durationDisplay = document.getElementById('duration');
         var albumCover = document.getElementById('albumCover');
 
-        function syncAudioDuration() {
-            var d = Number(audio.duration);
-            if (isFinite(d) && d > 0) durationDisplay.textContent = formatTime(d);
-        }
-        audio.addEventListener('loadedmetadata', syncAudioDuration);
-        audio.addEventListener('durationchange', syncAudioDuration);
-        audio.addEventListener('canplay', syncAudioDuration);
         // 自动播放音乐
-        audio.load();
         audio.play();
         playButton.querySelector('.layui-icon').classList.replace('layui-icon-play', 'layui-icon-pause');
 
@@ -616,7 +608,7 @@ function previewSong(that) {
         });
 
         audio.addEventListener('timeupdate', function() {
-            var duration = Number(audio.duration); var percent = (isFinite(duration) && duration > 0) ? (audio.currentTime / duration) * 100 : 0;
+            var percent = (audio.currentTime / audio.duration) * 100 || 0;
             progressBar.value = percent;
             currentTimeDisplay.textContent = formatTime(audio.currentTime);
             durationDisplay.textContent = formatTime(audio.duration);
