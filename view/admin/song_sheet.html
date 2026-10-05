@@ -516,7 +516,7 @@ function previewSong(that) {
 
     $.post("/AdminAjax/Song/act/info", jsonData, function(data) {
         if (data.code === 0) {
-            var musicUrl = data.music_url; // 从接口中获取音乐地址
+            var musicUrl = '/AdminAjax/Song/act/preview?music_source=' + encodeURIComponent(jsonData.music_source) + '&type=' + encodeURIComponent(jsonData.type) + '&songid=' + encodeURIComponent(jsonData.songid);
             var albumCover = data.album_cover; // 专辑封面
             var songName = data.song_name; // 歌曲名称
             var artistName = data.artist_name; // 歌手名称
