@@ -37,7 +37,7 @@ class MusicSourceService
         if($ok===false)throw new \RuntimeException('音乐API连接失败或响应过大');
         if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)&&in_array($status,[301,302,303,307,308],true)&&$location!=='')return $this->audioUrl($location);
         if($status<200||$status>=300)throw new \RuntimeException('音乐API请求失败');
-        if($raw) return ['body'=>$body,'content_type'=>'audio/mpeg'];
+        if($raw){ $ct=(strncmp($body,"\x00\x00\x00\x18ftyp",8)===0||strpos(substr($body,0,64),'ftyp')!==false)?'audio/mp4':'audio/mpeg'; return ['body'=>$body,'content_type'=>$ct,'length'=>strlen($body)]; }
         $data=json_decode($body,true);
         if(!in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)&&is_array($data)&&isset($data['code'])&&!in_array($data['code'],[0,1,200,'0','1','200'],true)&&!isset($data['url'])&&!isset($data['data']['url']))throw new \RuntimeException('音乐接口返回错误');
         if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)){
