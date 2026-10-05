@@ -71,10 +71,8 @@ class MusicSourceService
     public function lyric($type,$id){$this->platform($type);$d=$this->request('wyy_lrc',$id);if(!is_string($d['lyric']??null))throw new \RuntimeException('歌词格式不正确');return $d['lyric'];}
     public function info($type,$id)
     {
-        $this->platform($type);$d=$this->request('wyy_song_info',$id);$r=$d['data'][0]??null;
-        if(!is_array($r)||!isset($r['name']))throw new \RuntimeException('未找到歌曲');
-        $pic=$r['pic']??'';
-        if(!is_string($pic)||!filter_var($pic,FILTER_VALIDATE_URL)||!in_array(parse_url($pic,PHP_URL_SCHEME),['http','https'],true)||stripos($pic,'shykey=')!==false||strpos($pic,$this->source['key'])!==false)$pic='';
-        return ['code'=>0,'song_name'=>(string)$r['name'],'artist_name'=>is_string($r['singer']??null)?$r['singer']:'','album_name'=>is_string($r['album']??null)?$r['album']:'','album_cover'=>$pic,'music_url'=>'','location'=>'','lyric'=>'','music_source'=>$this->source['id']];
+        $this->platform($type);
+        $audio=$this->audio($type,$id);
+        return ['code'=>0,'song_name'=>'','artist_name'=>'','album_name'=>'','album_cover'=>'','music_url'=>$audio,'location'=>$audio,'lyric'=>'','music_source'=>$this->source['id']];
     }
 }
