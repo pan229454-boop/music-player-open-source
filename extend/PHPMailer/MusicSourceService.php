@@ -12,7 +12,7 @@ class MusicSourceService
         if(!function_exists('curl_init')) throw new \RuntimeException('需启用PHP cURL扩展');
         $p=['type'=>$operation,'shykey'=>$this->source['key']];
         if($id!==null) {
-            if(!is_scalar($id)||!preg_match('/^[0-9]{1,24}$/D',(string)$id)) throw new \InvalidArgumentException('歌曲ID不正确');
+            if(!is_scalar($id)||!preg_match('/^[A-Za-z0-9_:.\-]{1,128}$/D',(string)$id)) throw new \InvalidArgumentException('歌曲ID不正确');
             $p['id']=(string)$id;
         }
         if(in_array($operation,['wyy','qq','kugou','qishui'],true)) {
@@ -36,7 +36,7 @@ class MusicSourceService
         if($status<200||$status>=300)throw new \RuntimeException('音乐API请求失败');
         $data=json_decode($body,true);
         if(is_array($data)&&isset($data['code'])&&!in_array($data['code'],[0,1,200,'0','1','200'],true)&&!isset($data['url'])&&!isset($data['data']['url']))throw new \RuntimeException('音乐接口返回错误');
-        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true))return $this->audioUrl(is_array($data)?($data['url']??($data['data']['url']??'')):trim($body));
+        if(in_array($operation,['wyy_url','qq_url','kg_url','qishui_url'],true)){ $u=is_array($data)?($data['url']??($data['data']['url']??($data['data'][0]['url']??($data['play_url']??'')))):trim($body); return $this->audioUrl($u); }
         if(!is_array($data))throw new \RuntimeException('音乐API响应格式不正确');
         return $data;
     }
