@@ -2365,12 +2365,12 @@ var Lrc = {
 					}
 				} else {
 					if (playerinfo.Sheetlist[albumId].songs[songId].type == "local") {
-						lrcurl = api + "/api/musicLyric?url=" + playerinfo.Sheetlist[albumId].songs[songId].lyric + "&music_source=" + encodeURIComponent(playerinfo.Sheetlist[albumId].songs[songId].music_source || "legacy") + "&type=" + playerinfo.Sheetlist[albumId].songs[songId].type + "&id=" + key
+						lrcurl = api + "/api/musicLyric?url=" + playerinfo.Sheetlist[albumId].songs[songId].lyric + "&type=" + playerinfo.Sheetlist[albumId].songs[songId].type + "&id=" + key
 					} else {
 						var str = playerinfo.Sheetlist[albumId].songs[songId].name+ playerinfo.Sheetlist[albumId].songs[songId].artist;
 						var txt = str.replace(/\s*/g,"");
 						var d = "&ksc=http://"+ document.domain +"/xplayer/"+ str + '.txt';
-						lrcurl = api + "/api/musicLyric?songId=" + playerinfo.Sheetlist[albumId].songs[songId].id + "&music_source=" + encodeURIComponent(playerinfo.Sheetlist[albumId].songs[songId].music_source || "legacy") + "&type=" + playerinfo.Sheetlist[albumId].songs[songId].type + "&id=" + key + d
+						lrcurl = api + "/api/musicLyric?songId=" + playerinfo.Sheetlist[albumId].songs[songId].id + "&type=" + playerinfo.Sheetlist[albumId].songs[songId].type + "&id=" + key + d
 					};
 					$.ajax({
 						url: lrcurl,
@@ -2752,7 +2752,7 @@ function netmusic() {
 	if (playerinfo.Sheetlist[albumId].songs[songId].type == "local") {
 		audio.src = playerinfo.Sheetlist[albumId].songs[songId].url
 	} else {
-		audio.src = api + "/api/musicUrl?songId=" + playerinfo.Sheetlist[albumId].songs[songId].id + "&music_source=" + encodeURIComponent(playerinfo.Sheetlist[albumId].songs[songId].music_source || "legacy") + "&type=" + playerinfo.Sheetlist[albumId].songs[songId].type + "&id=" + key + "&sign=legacy"
+		audio.src = api + "/api/musicUrl?songId=" + playerinfo.Sheetlist[albumId].songs[songId].id + "&type=" + playerinfo.Sheetlist[albumId].songs[songId].type + "&id=" + key
 	};
 	$songName.html("<span title=\"" + playerinfo.Sheetlist[albumId].songs[songId].name + "\">" + LimitStr(playerinfo.Sheetlist[albumId].songs[songId].name) + "</span>");
 	$artist.html("<span title=\"" + playerinfo.Sheetlist[albumId].songs[songId].artist + "\">" + LimitStr(playerinfo.Sheetlist[albumId].songs[songId].artist) + "</span>");

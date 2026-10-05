@@ -387,7 +387,7 @@ $open_head = [
 				'msg' => '没有权限'
 			];
 		}else{
-			Cache::delete('info_sources_v1_'.$data['playerId']);
+			Cache::delete('info'.$data['playerId']);
 			
 			$ids = request()->param('ids/a');
 			
@@ -508,7 +508,7 @@ $open_head = [
 			break;
 			case 'edit':
 				$data = input('post.');
-				Cache::delete('info_sources_v1_'.$data['id']);
+				Cache::delete('info'.$data['id']);
 				if(!array_key_exists('phone_load',$data)){
 					$data['phone_load']='0';
 				}
@@ -544,7 +544,7 @@ $open_head = [
 			break;
 			case 'del':
 				$data = input('post.');
-				Cache::delete('info_sources_v1_'.$data['id']);
+				Cache::delete('info'.$data['id']);
 				$userInfo = Users::getLoginUser();
 				// 删除歌单关联项
 				PlayerSongSheet::where('player_id',$data['id'])->delete();
@@ -615,7 +615,7 @@ $open_head = [
 					if(count($players) > 0){
 						foreach ($players as $value){
 							// 删除api缓存
-							Cache::delete('info_sources_v1_'.$value->player_id);
+							Cache::delete('info'.$value->player_id);
 						}
 					}
 					SongSheet::sets($data);
@@ -631,7 +631,7 @@ $open_head = [
 						if(count($players) > 0){
 							foreach ($players as $value){
 								// 删除api缓存
-								Cache::delete('info_sources_v1_'.$value->player_id);
+								Cache::delete('info'.$value->player_id);
 							}
 						}
 				// 删除歌单音乐
@@ -653,21 +653,7 @@ $open_head = [
     {
 		$this->checkLogin();
 		$userInfo = Users::getLoginUser();
-        switch ($act) {
-            case 'preview':
-                try {
-                    $query = input('get.');
-                    $adapter = new \PHPMailer\MusicSourceService($query['music_source'] ?? 'legacy');
-                    return redirect($adapter->audio($query['type'] ?? '', $query['songid'] ?? ''));
-                } catch (\Throwable $e) {
-                    return response('试听接口不可用，请检查来源接口状态及套餐权限', 502);
-                }
-            case 'sources':
-                try {
-                    return json(['code' => 0, 'sources' => \PHPMailer\MusicSourceRegistry::publicList(true)]);
-                } catch (\Throwable $e) {
-                    return json(['code' => -1, 'msg' => '音乐接口列表读取失败', 'sources' => []]);
-                }
+		switch ($act) {
             case 'info':
 				$data = input('post.');
 				$rule=[
@@ -746,70 +732,40 @@ $open_head = [
 				}
 			break;
 			case 'save':
-                if (!request()->isPost()) return json(['code'=>-1,'msg'=>'请使用POST保存']);
 				$jsonData = $_POST['jsonData'];
 				$songSheetId = $_POST['songSheetId'];
-                if (!SongSheet::where('id',$songSheetId)->where('uid',$userInfo['uid'])->find()) return json(['code'=>-1,'msg'=>'歌单不存在或无权修改']);
-                // Validate all rows before the existing destructive replace flow.
-                $array = json_decode($jsonData, true);
-                if (!is_array($array) || count($array) > 5000) return json(['code'=>-1,'msg'=>'歌曲列表格式不正确']);
-                try {
-                    $sources = \PHPMailer\MusicSourceRegistry::read();
-                    foreach ($array as &$row) {
-                        if (!is_array($row)) throw new \InvalidArgumentException('歌曲数据不正确');
-                        $sourceId = $row['music_source'] ?? 'legacy';
-                        if (!is_string($sourceId) || !isset($sources[$sourceId])) throw new \InvalidArgumentException('歌曲来源接口不存在');
-                        // Disabled sources remain persistable so reordering does not lose songs.
-                        $row['music_source'] = $sourceId;
-                    }
-                    unset($row);
-                    $columns = \think\facade\Db::name('song')->getTableFields();
-                    if (!in_array('music_source', $columns, true)) throw new \RuntimeException('请先执行音乐接口来源数据库升级脚本');
-                } catch (\Throwable $e) {
-                    return json(['code'=>-1,'msg'=>$e->getMessage()]);
-                }
 				// 清除缓存
 				$players = SongSheet::songSheetPlayers($songSheetId);
 				if(count($players) > 0){
 					foreach ($players as $value){
 						// 删除api缓存
-						Cache::delete('info_sources_v1_'.$value->player_id);
+						Cache::delete('info'.$value->player_id);
 					}
 				}
 
-                // Insert new rows first: insertion failure cannot delete the previous playlist (MyISAM compatible).
-                $previousIds = Song::where('song_sheet_id',$songSheetId)->column('id');
-                $newIds = [];
-                foreach ($array as &$row) {
-                    $row = array_intersect_key($row,array_flip(['song_id','name','type','album_name','artist_name','album_cover','location','lyric','taxis','music_source']));
-                    $row['song_sheet_id']=$songSheetId;
-                    $row['id']=bin2hex(random_bytes(16));
-                    $newIds[]=$row['id'];
-                }
-                unset($row);
-                try {
-                    if ($array && Db::name('song')->insertAll($array)!==count($array)) throw new \RuntimeException('写入不完整');
-                    if ($previousIds) Song::where('song_sheet_id',$songSheetId)->whereIn('id',$previousIds)->delete();
-                    $result=['code'=>0,'msg'=>'保存成功'];
-                } catch (\Throwable $e) {
-                    if ($newIds) Song::where('song_sheet_id',$songSheetId)->whereIn('id',$newIds)->delete();
-                    $result=['code'=>-1,'msg'=>'保存失败，旧歌曲列表已保留'];
-                }
-                foreach ($players as $value) Cache::delete('info_sources_v1_'.$value->player_id);
+				// 删除播放器之前的歌曲
+				Song::where('song_sheet_id', $songSheetId)->delete();
 
+				// 重新保存歌曲列表
+				$array = json_decode($jsonData, true);
+				foreach ($array as $key => $value) {
+					$value['song_sheet_id'] = $songSheetId;
+					$value['id'] = uniqid();
+					$array[$key] = $value;
+				}
+				if(Db::name('song')->replace()->insertAll($array)){
+					$result = [
+						'code' => 0,
+						'msg' => '保存成功[已清除缓存]',
+					];
+				}else{
+					$result = [
+						'code' => -1,
+						'msg' => '保存失败',
+					];
+				}
 			break;
 			case 'search':
-                try {
-                    $query = input('get.');
-                    $sourceId = $query['music_source'] ?? 'legacy';
-                    $source = \PHPMailer\MusicSourceRegistry::get($sourceId);
-                    if ($source['provider'] === 'shymusic') {
-                        $adapter = new \PHPMailer\MusicSourceService($sourceId);
-                        return json(['code' => 0, 'songs' => $adapter->search($query['type'] ?? '', $query['song_name'] ?? '')]);
-                    }
-                } catch (\Throwable $e) {
-                    return json(['code' => -1, 'msg' => $e->getMessage(), 'songs' => []]);
-                }
 				$data=input('get.');
 				$s=$data['song_name'];
 				switch ($data['type']) {

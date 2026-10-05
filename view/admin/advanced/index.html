@@ -16,7 +16,7 @@
 }
 </style>
 <div class="layui-fluid"><div class="layui-card">
-  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件、授权与音乐API</div>
+  <div class="layui-card-header"><i class="layui-icon layui-icon-set"></i> 高级设置 — 邮件与服务器授权</div>
   <div class="layui-card-body">
     <blockquote class="layui-elem-quote">配置用于注册及找回密码的验证码邮件。请使用邮箱的 SMTP 授权码，而非登录密码。建议通过 HTTPS 打开后台再填写授权码。</blockquote>
     <div class="layui-tab advanced-mail-tabs"><ul class="layui-tab-title"><li class="layui-this">SMTP配置</li><li>邮件模板与测试</li><li>服务器授权</li><li>音乐 API 配置</li></ul><div class="layui-tab-content"><div class="layui-tab-item layui-show">
@@ -56,19 +56,7 @@
 <div class="layui-form-item"><label class="layui-form-label">授权QQ</label><div class="layui-input-block"><input class="layui-input" name="auth_qq" type="text" inputmode="numeric" placeholder="外部服务授权的QQ" lay-verify="required"></div></div>
 <div class="layui-form-item"><label class="layui-form-label">授权密钥</label><div class="layui-input-block"><input class="layui-input" name="auth_skey" type="password" autocomplete="new-password" placeholder="首次必填；留空保留已保存密钥"></div></div>
 <div class="layui-form-item"><div class="layui-input-block"><p id="server-auth-status">正在读取授权配置…</p><button class="layui-btn mail-template-button" type="button" disabled lay-submit lay-filter="server-auth-save">保存授权配置</button></div></div>
-</form></div><div class="layui-tab-item">
-<blockquote class="layui-elem-quote">旧歌曲默认使用原接口，各接口独立启停。ShyMusic当前仅支持已验证的网易云搜索、播放及LRC歌词；QQ、酷狗和歌单导入尚未适配。切换不会自动回退到原接口。HTTP会明文传输密钥，建议先确认HTTPS入口的套餐权限；请勿公开密钥。</blockquote>
-<table class="layui-table"><thead><tr><th>接口名称</th><th>协议</th><th>状态</th><th>操作</th></tr></thead><tbody id="music-source-list"></tbody></table>
-<button type="button" class="layui-btn" id="music-source-new">新增接口</button>
-<form class="layui-form" lay-filter="music-api-form" autocomplete="off">
-<input type="hidden" name="csrf" value="{$mailSettingsCsrf}"><input type="hidden" name="action" value="music_source_save"><input type="hidden" name="source_id">
-<div class="layui-form-item"><label class="layui-form-label">接口名称</label><div class="layui-input-block"><input name="source_name" class="layui-input" lay-verify="required"></div></div>
-<div class="layui-form-item"><label class="layui-form-label">适配协议</label><div class="layui-input-block"><select name="source_provider"><option value="shymusic">ShyMusic v2（网易云）</option><option value="legacy">原接口（仅内置项）</option></select></div></div>
-<div class="layui-form-item"><label class="layui-form-label">接口地址</label><div class="layui-input-block"><input class="layui-input" name="source_endpoint" placeholder="https://接口域名/v2/music/api/"></div></div>
-<div class="layui-form-item"><label class="layui-form-label">密钥</label><div class="layui-input-block"><input name="source_key" type="password" autocomplete="new-password" class="layui-input" placeholder="首次必填；编辑留空保留"></div></div>
-<div class="layui-form-item"><label class="layui-form-label">启用状态</label><div class="layui-input-block"><select name="source_enabled"><option value="1">开启</option><option value="0">关闭</option></select></div></div>
-<div class="layui-form-item"><div class="layui-input-block"><button type="button" class="layui-btn mail-template-button" disabled lay-submit lay-filter="music-api-save">保存接口</button><p id="music-api-status">正在读取接口列表…</p><p>多个接口可以同时开启。密钥不回显；可自定义兼容ShyMusic v2协议的公网地址；未知协议需要新增适配器，禁止内网地址。</p></div></div>
-</form></div></div></div>
+</form></div><div class="layui-tab-item"><blockquote class="layui-elem-quote">音乐 API 配置方案已撤销，此标签暂作占位，暂无配置功能。</blockquote></div></div></div>
 
   </div></div></div>
 {literal}
@@ -78,14 +66,13 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
     $.ajax({url: '/Admin/mailSettingsData', type: 'GET', dataType: 'json', cache: false}).done(function(res) {
         if (!res || res.code !== 0) { layer.msg((res && res.msg) || '读取配置失败'); return; }
         if (typeof res.csrf !== 'string' || !/^[a-f0-9]{64}$/.test(res.csrf)) { layer.msg('安全令牌读取失败，请重新登录后重试'); return; }
-        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"], [lay-filter="server-auth-switch-form"], [lay-filter="music-api-form"]').find('input[name="csrf"]').val(res.csrf);
+        $('[lay-filter="advanced-mail-form"], [lay-filter="mail-template-form"], [lay-filter="mail-test-form"], [lay-filter="server-auth-form"], [lay-filter="server-auth-switch-form"]').find('input[name="csrf"]').val(res.csrf);
         var fields = {}, allowed = ['host', 'from', 'username', 'from_name', 'port', 'security'];
         allowed.forEach(function(key) { if (res.data && res.data[key] != null) fields[key] = res.data[key]; });
         form.val('advanced-mail-form', fields);
         var templateFields = {};
         ['template_title','template_body','homepage'].forEach(function(key) { if (res.data && res.data[key] != null) templateFields[key] = res.data[key]; });
         form.val('mail-template-form', templateFields);
-        renderSources(res.data.music_sources || []);
         setAuthSwitch(res.data && res.data.skip_check === true);
         form.val('server-auth-form', {auth_qq: (res.data && res.data.auth_qq) || ''});
         $('#server-auth-status').text(res.has_auth_key ? '授权密钥已保存，不会回显；更换QQ需重新填写密钥。' : '尚未保存授权配置，当前沿用代码原有配置。');
@@ -93,38 +80,6 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
         $('#advanced-mail-status').text(res.has_password ? '授权码已保存，不会回显；留空保留原值。' : '尚未保存邮件配置，请填写授权码。');
         $('#advanced-mail-save').prop('disabled', false);
     }).fail(function() { layer.msg('读取邮件配置失败，请刷新重试'); });
-    var sourceRows = [];
-    function renderSources(rows) {
-        sourceRows = rows;
-        var body = $('#music-source-list').empty();
-        rows.forEach(function(row, index) {
-            var tr = $('<tr>');
-            $('<td>').text(row.name).appendTo(tr);
-            $('<td>').text(row.provider).appendTo(tr);
-            $('<td>').text(row.enabled ? '开启' : '关闭').appendTo(tr);
-            var ops = $('<td>').appendTo(tr);
-            $('<button type="button" class="layui-btn layui-btn-xs">').text('编辑').attr('data-source-edit', index).appendTo(ops);
-            $('<button type="button" class="layui-btn layui-btn-xs layui-btn-primary">').text(row.enabled ? '关闭' : '开启').attr('data-source-toggle', index).appendTo(ops);
-            tr.appendTo(body);
-        });
-        $('#music-api-status').text('已读取 ' + rows.length + ' 个接口，修改后请保存。');
-    }
-    $('#music-source-new').on('click', function() {
-        form.val('music-api-form', {source_id:'',source_name:'',source_provider:'shymusic',source_endpoint:'http://shybot.top/v2/music/api/',source_key:'',source_enabled:'1'});
-        $('#music-api-status').text('新增接口，尚未保存。');
-    });
-    $('#music-source-list').on('click', '[data-source-edit]', function() {
-        var row = sourceRows[Number($(this).attr('data-source-edit'))];
-        form.val('music-api-form', {source_id:row.id,source_name:row.name,source_provider:row.provider,source_endpoint:row.endpoint || 'http://shybot.top/v2/music/api/',source_key:'',source_enabled:row.enabled ? '1':'0'});
-        $('#music-api-status').text(row.has_key ? '密钥已保存，留空保留。' : '此接口未保存密钥。');
-    }).on('click', '[data-source-toggle]', function() {
-        var row = sourceRows[Number($(this).attr('data-source-toggle'))], button = $(this);
-        button.prop('disabled', true);
-        $.ajax({url:'/Admin/advanced',type:'POST',dataType:'json',data:{action:'music_source_toggle',source_id:row.id,source_enabled:row.enabled ? '0':'1',csrf:$('[lay-filter="music-api-form"] input[name="csrf"]').val()}})
-          .done(function(res) { layer.msg(res.msg || '操作失败'); if(res.code === 0) renderSources(res.sources || []); })
-          .fail(function() { layer.msg('接口状态保存失败'); })
-          .always(function() { button.prop('disabled', false); });
-    });
     function setAuthSwitch(enabled) {
         $('[lay-filter="server-auth-switch-form"] input[name="skip_check"]').prop('checked', enabled);
         form.render('checkbox', 'server-auth-switch-form');
@@ -139,13 +94,11 @@ layui.use(['form', 'jquery', 'layer', 'element'], function() {
         if (button.prop('disabled')) return false;
         button.prop('disabled', true);
         $.ajax({url: '/Admin/advanced', type: 'POST', data: data.field, dataType: 'json', timeout: 60000})
-          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'music_source_save') { renderSources(res.sources || []); $('[lay-filter="music-api-form"] input[name="source_key"]').val(''); $('#music-api-status').text('接口已保存。'); } if (res && res.code === 0 && data.field.action === 'server_auth_switch') { setAuthSwitch(res.skip_check === true); } if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
+          .done(function(res) { layer.msg((res && res.msg) || '操作失败'); if (res && res.code === 0 && data.field.action === 'server_auth_switch') { setAuthSwitch(res.skip_check === true); } if (res && res.code === 0 && data.field.action === 'server_auth') { $('[lay-filter="server-auth-form"] input[name="auth_skey"]').val(''); $('#server-auth-status').text('授权密钥已保存，不会回显；更换QQ需重新填写密钥。'); } })
           .fail(function() { layer.msg('请求失败或超时，请检查登录状态及服务器；不要立即重复发送'); })
           .always(function() { button.prop('disabled', false); });
         return false;
     }
-    form.on('submit(music-api-save)', mailAction);
-    form.on('select', function(data) { if ($(data.elem).closest('[lay-filter="music-api-form"]').length) $('#music-api-status').text('配置已修改，尚未保存。'); });
     form.on('submit(server-auth-switch-save)', mailAction);
     form.on('submit(server-auth-save)', mailAction);
     form.on('submit(mail-template-save)', mailAction);

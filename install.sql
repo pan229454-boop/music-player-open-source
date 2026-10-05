@@ -302,7 +302,6 @@ DROP TABLE IF EXISTS `gui_song`;
 CREATE TABLE `gui_song` (
   `id` varchar(100) DEFAULT NULL,
   `song_id` varchar(32) DEFAULT NULL COMMENT '歌曲id',
-  `music_source` varchar(64) NOT NULL DEFAULT 'legacy',
   `song_sheet_id` varchar(32) DEFAULT NULL COMMENT '所属歌单',
   `name` varchar(100) DEFAULT NULL COMMENT '歌曲名称',
   `type` varchar(10) DEFAULT NULL COMMENT '歌曲类型',
